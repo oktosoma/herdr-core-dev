@@ -8,6 +8,19 @@
 4. **Integration (orchestrator):** merges into `coord/<milestone>` (merge-first if the branch moved, re-verify, then merge). Updates the register. Dev keeps serving from the integration branch; the only pause is a brief rebuild/restart at integration, announced first.
 5. **Next:** dispatch the following ticket; the monitor advances one step per check.
 
+## Worktrees
+
+A worktree is a separate working directory for one branch, sharing the same repo — it lets agents work in parallel without stepping on each other's files.
+
+- **Rule:** one ticket → one branch (`task/<ticket-id>`) → one worktree.
+- **Location:** worktrees live outside the repo directory — the usual layout is a sibling directory, e.g. `../worktrees/<project>/<ticket-id>`; the exact path goes in the dispatch brief.
+- **Create:** `git worktree add <path> -b task/<ticket-id> <base-commit>`
+- **List:** `git worktree list`
+- **Remove (after integration):** `git worktree remove <path>` (add `--force` only if the worktree has uncommitted changes you have decided to discard)
+- **Prune stale entries:** `git worktree prune`
+- **Review:** the reviewer checks out the candidate from a SEPARATE checkout/worktree, never the worker's.
+- **Close-out:** no dangling worktrees — every worktree is removed or parked via a register entry.
+
 ## Rules
 
 - The register is written by the orchestrator only. Open decisions belong to the founder only. Do not merge to `main`. Do not dispatch beyond the running milestone.

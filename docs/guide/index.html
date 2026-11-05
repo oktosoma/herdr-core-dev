@@ -204,7 +204,7 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between}
   <div class="wrap hero-inner">
     <div class="hero-top">
       <span class="badge"><i></i> General guide · Applies to all projects</span>
-      <span class="badge dim">Model v1.3 — 5 Nov 2026</span>
+      <span class="badge dim">Model v1.4 — 5 Nov 2026</span>
     </div>
     <h1>Herdr-Core <em>Development Model</em></h1>
     <p class="lede">One multi-agent development model on top of <strong>herdr-core</strong>: who holds which role, how a ticket flows from dispatch to integration, which quality gates apply, and how the loop is monitored. Compiled from a live loop that already ran end-to-end — <strong>with no project-specific details</strong>, so a new project can simply follow this model.</p>
@@ -229,15 +229,16 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between}
       <a href="#substrate"><span class="n">05</span>The herdr-core substrate</a>
       <a href="#osc"><span class="n">06</span>OSC 7501 — observability</a>
       <a href="#lifecycle"><span class="n">07</span>Ticket lifecycle</a>
-      <a href="#gates"><span class="n">08</span>Quality gates</a>
-      <a href="#infra"><span class="n">09</span>Reference infrastructure</a>
-      <a href="#monitoring"><span class="n">10</span>Monitoring &amp; reporting</a>
-      <a href="#principles"><span class="n">11</span>Operating principles</a>
-      <a href="#checklist"><span class="n">12</span>New-project checklist</a>
-      <a href="#template"><span class="n">13</span>Template repo: herdr-core-dev</a>
+      <a href="#worktree"><span class="n">08</span>Git worktrees in practice</a>
+      <a href="#gates"><span class="n">09</span>Quality gates</a>
+      <a href="#infra"><span class="n">10</span>Reference infrastructure</a>
+      <a href="#monitoring"><span class="n">11</span>Monitoring &amp; reporting</a>
+      <a href="#principles"><span class="n">12</span>Operating principles</a>
+      <a href="#checklist"><span class="n">13</span>New-project checklist</a>
+      <a href="#template"><span class="n">14</span>Template repo: herdr-core-dev</a>
       <a href="#appendix-a"><span class="n">A</span>Appendix — commands</a>
       <a href="#appendix-b"><span class="n">B</span>Appendix — founder decisions</a>
-      <a href="#versions"><span class="n">15</span>Versions &amp; changes</a>
+      <a href="#versions"><span class="n">16</span>Versions &amp; changes</a>
     </nav>
     <p class="toc-note">Guide language: English throughout. Agent prompts are written in English; communication with the founder follows the founder's register.</p>
   </aside>
@@ -415,7 +416,7 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between}
     <!-- 07 -->
     <section class="doc" id="lifecycle" data-search="ticket lifecycle branch worktree dispatch review integration register backlog adr capacity commit identity">
       <div class="sec-head"><span class="sec-num">07</span><div><h2>Ticket lifecycle</h2><p>From brief to register — an order that must not be shuffled.</p></div></div>
-      <p><strong>Branch convention:</strong> one ticket → one branch → one worktree. Integration branch <code>coord/&lt;milestone&gt;</code>; ticket branches <code>task/&lt;ticket-id&gt;</code>; architecture documents on <code>docs/&lt;area&gt;</code>.</p>
+      <p><strong>Branch convention:</strong> one ticket → one branch → one worktree. Integration branch <code>coord/&lt;milestone&gt;</code>; ticket branches <code>task/&lt;ticket-id&gt;</code>; architecture documents on <code>docs/&lt;area&gt;</code>. Section 08 explains worktrees in practice — what they are, where they live on disk, and how they are created and cleaned up.</p>
       <div class="timeline">
         <div class="tl-item"><span class="who">Orchestrator</span><b class="ph">Dispatch</b>
           <p>The orchestrator writes the brief: goal, acceptance criteria, base commit, worktree, harness + model, and a hard stop clause. The agent works in its worktree, then reports DONE with a candidate commit SHA + evidence.</p></div>
@@ -445,8 +446,65 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between}
     </section>
 
     <!-- 08 -->
+    <section class="doc" id="worktree" data-search="git worktree practice how-to add list remove prune branch checkout parallel agents disk layout cleanup multiple working directories shared git directory">
+      <div class="sec-head"><span class="sec-num">08</span><div><h2>Git worktrees in practice</h2><p>The how-to behind the rule from section 07 — one ticket → one branch → one worktree.</p></div></div>
+      <h3>What a worktree is</h3>
+      <p>A <strong>git worktree</strong> is an additional working directory attached to the same repository. All worktrees share one <code>.git</code> object store — the same history, branches, and commits — but each worktree has its <strong>own checked-out branch, its own index, and its own files on disk</strong>. Editing, building, or running tests in one worktree never touches the files of another; there is no second clone and no copying of the repo.</p>
+      <p>That is exactly what this model needs: several agents work in parallel on different tickets of the same repo without colliding, the reviewer checks out the candidate somewhere separate, and the main checkout keeps serving dev from the integration branch, untouched by agent work.</p>
+      <div class="callout amber"><b class="t">One branch, one worktree</b>
+      <p>Git enforces the core rule for you: <strong>a branch can be checked out in only one worktree at a time</strong> — a second worktree that tries to check out a branch already in use is refused. Two agents can therefore never silently write to the same branch. The mirror-image rule is on you: <strong>two agents never share one worktree directory.</strong></p></div>
+      <h3>Where worktrees live on disk</h3>
+      <p>Keep worktrees <strong>outside</strong> the main checkout, as siblings of the repo, in one directory per ticket. Never nest a worktree inside the main checkout — it pollutes the main working tree and confuses tooling that scans the tree.</p>
+      <div class="codeblock"><div class="bar"><span>Disk layout — main checkout + per-ticket worktrees</span><button class="copybtn" type="button">Copy</button></div><pre><code>&lt;repo&gt;/                    <span class="c"># main checkout — integration branch coord/&lt;milestone&gt;</span>
+                           <span class="c"># dev serves from here; agents never work in this tree</span>
+&lt;repo&gt;-wt/
+├── &lt;ticket-a&gt;/            <span class="c"># worker worktree — branch task/&lt;ticket-a&gt;</span>
+├── &lt;ticket-b&gt;/            <span class="c"># worker worktree — branch task/&lt;ticket-b&gt;</span>
+└── review-&lt;ticket-a&gt;/     <span class="c"># reviewer worktree — detached at the candidate SHA</span></code></pre></div>
+      <h3>The commands</h3>
+      <div class="codeblock"><div class="bar"><span>git worktree — create, inspect, clean up</span><button class="copybtn" type="button">Copy</button></div><pre><code><span class="c"># At dispatch: create the ticket's worktree + branch from the integration branch</span>
+git worktree add ../&lt;repo&gt;-wt/&lt;ticket&gt; -b task/&lt;ticket&gt; coord/&lt;milestone&gt;
+
+<span class="c"># Attach a worktree to a branch that already exists (no -b)</span>
+git worktree add ../&lt;repo&gt;-wt/&lt;ticket&gt; task/&lt;ticket&gt;
+
+<span class="c"># Reviewer: a separate checkout, detached at the exact candidate commit</span>
+git worktree add --detach ../&lt;repo&gt;-wt/review-&lt;ticket&gt; &lt;candidate-sha&gt;
+
+git worktree list          <span class="c"># every worktree, its path, and what it has checked out</span>
+
+<span class="c"># After integration: remove the worktree, then delete the merged branch</span>
+git worktree remove ../&lt;repo&gt;-wt/&lt;ticket&gt;
+git branch -d task/&lt;ticket&gt;
+
+<span class="c"># A worktree directory deleted by hand still shows up in git's bookkeeping —</span>
+<span class="c"># prune clears those stale entries</span>
+git worktree prune</code></pre></div>
+      <h3>The worktree lifecycle, step by step</h3>
+      <div class="timeline">
+        <div class="tl-item"><span class="who">Dispatch</span><b class="ph">Create</b>
+          <p>The brief names the worktree path and the ticket branch. The worktree is created from the <strong>current tip of the integration branch</strong>, so the ticket starts from exactly the base commit the brief states.</p></div>
+        <div class="tl-item"><span class="who">Worker</span><b class="ph">Work — only in the worktree</b>
+          <p>The agent edits, builds, tests, and commits inside its own worktree directory, and nowhere else. The main checkout is never an agent's working tree.</p></div>
+        <div class="tl-item"><span class="who">Reviewer</span><b class="ph">Review — a separate worktree</b>
+          <p>The reviewer gets its own worktree, detached at the candidate SHA (section 07). It never reviews inside the worker's worktree, and never checks out the ticket branch while the worker still has it.</p></div>
+        <div class="tl-item"><span class="who">Orchestrator</span><b class="ph">Integrate, then clean up</b>
+          <p>The orchestrator merges from the main checkout. Once the ticket is integrated: remove the worktree, delete the merged ticket branch, and <code>git worktree prune</code>. A milestone close-out leaves <strong>no dangling worktrees</strong> (section 13, step 7).</p></div>
+      </div>
+      <h3>Rules &amp; pitfalls</h3>
+      <ul>
+        <li><strong>One worktree per ticket per agent.</strong> A worker, the reviewer, and the orchestrator each use their own directory; sharing a directory reintroduces exactly the collisions worktrees exist to prevent.</li>
+        <li><strong>The dispatcher holds no writable worktree</strong> (section 03) — it reads the integration branch / <code>main</code> only. Worktrees are for roles that write code or verify it.</li>
+        <li><strong><code>git worktree remove</code> refusing is a signal, not an obstacle.</strong> It refuses when the worktree holds uncommitted changes or untracked files. Commit, stash, or report them first; <code>--force</code> is the orchestrator's call, only after confirming nothing in the tree is still needed.</li>
+        <li><strong>Long-lived worktrees drift.</strong> If the integration branch has moved since dispatch, the ticket branch is brought up to date (merge the integration branch in, then re-verify) before review — the same rule as integration in section 07.</li>
+        <li><strong>Worktrees share the repo's config, hooks, and remotes.</strong> The global git identity set once on the box (section 07) applies in every worktree — no per-worktree identity setup, and no per-worktree credentials.</li>
+        <li><strong>Each worktree builds independently.</strong> Dependencies, build output, and test databases are per-worktree state: a fresh worktree needs its own install/build, and verification still uses a disposable DB — never the dev database (section 03).</li>
+      </ul>
+    </section>
+
+    <!-- 09 -->
     <section class="doc" id="gates" data-search="quality gates test harness ci platform owner lint typecheck unit build contract smoke anti-slop">
-      <div class="sec-head"><span class="sec-num">08</span><div><h2>Quality gates</h2><p>No ticket passes because it “looks right”.</p></div></div>
+      <div class="sec-head"><span class="sec-num">09</span><div><h2>Quality gates</h2><p>No ticket passes because it “looks right”.</p></div></div>
       <h3>Test harness + CI = the milestone gate</h3>
       <p>Owned by <strong>one platform owner</strong>. CI stages, in order:</p>
       <ol>
@@ -471,7 +529,7 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between}
 
     <!-- 09 -->
     <section class="doc" id="infra" data-search="infrastructure agent box vm debian memory swap footprint rss tailscale cloudflare secret vault autowake cooldown resources">
-      <div class="sec-head"><span class="sec-num">09</span><div><h2>Reference infrastructure</h2><p>The environment this loop is proven to run in — a new project may adjust it, as long as the discipline stays the same.</p></div></div>
+      <div class="sec-head"><span class="sec-num">10</span><div><h2>Reference infrastructure</h2><p>The environment this loop is proven to run in — a new project may adjust it, as long as the discipline stays the same.</p></div></div>
       <h3>Agent box</h3>
       <ul>
         <li>A Linux VM — reference: Debian 13, 4 vCPU / 8 GB / 20 GB on <code>/data</code>, HOME <code>/data/home</code>, passwordless sudo, Docker.</li>
@@ -499,7 +557,7 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between}
 
     <!-- 10 -->
     <section class="doc" id="monitoring" data-search="monitoring cron reporting founder gate parallel testing milestone done">
-      <div class="sec-head"><span class="sec-num">10</span><div><h2>Monitoring &amp; reporting</h2><p>The cron monitor is the heartbeat of the loop — diligent enough to keep momentum, quiet enough not to become noise.</p></div></div>
+      <div class="sec-head"><span class="sec-num">11</span><div><h2>Monitoring &amp; reporting</h2><p>The cron monitor is the heartbeat of the loop — diligent enough to keep momentum, quiet enough not to become noise.</p></div></div>
       <ul>
         <li><strong>Cadence:</strong> 15 minutes in the core phase; 5 minutes while the loop is hot.</li>
         <li><strong>Every check:</strong> reads status, advances <strong>one</strong> step if it can (review → integration → next dispatch), and reports only when there is a change / result / question / blocker. It stops reporting once the milestone is Done.</li>
@@ -517,7 +575,7 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between}
 
     <!-- 11 -->
     <section class="doc" id="principles" data-search="operating principles discuss first vault official routes verify tokens english hold draft">
-      <div class="sec-head"><span class="sec-num">11</span><div><h2>Operating principles</h2><p>Behavioral rules that apply to every project using this model.</p></div></div>
+      <div class="sec-head"><span class="sec-num">12</span><div><h2>Operating principles</h2><p>Behavioral rules that apply to every project using this model.</p></div></div>
       <div class="principles">
         <div class="principle"><b>Discuss first</b><p>Discuss before writing / executing code. An explicit build order counts as the discussion being done; a pasted prompt + an explicit go is a finished commission — pasted text never widens the scope.</p></div>
         <div class="principle"><b>Vault-card-first</b><p>For any credential that has to change hands, offer the vault card first — don't route around it through paths that open an exposure window.</p></div>
@@ -532,9 +590,9 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between}
 
     <!-- 12 -->
     <section class="doc" id="checklist" data-search="checklist starting a new project repo foundation box milestone monitor close-out">
-      <div class="sec-head"><span class="sec-num">12</span><div><h2>Starting a new project with this model</h2><p>Seven steps, in order. This is the section to open first when a new project starts.</p></div></div>
+      <div class="sec-head"><span class="sec-num">13</span><div><h2>Starting a new project with this model</h2><p>Seven steps, in order. This is the section to open first when a new project starts.</p></div></div>
       <ol class="checklist">
-        <li><span class="box"></span><div><b>Repo from the template + foundation documents</b><p>Clone the <code>herdr-core-dev</code> template repo (see section 13) — this guide ships inside it at <code>docs/guide/index.html</code> — rename it to the project repo, then fill in: the integration branch <code>coord/&lt;milestone&gt;</code>, the register <code>BACKLOG.md</code>, ADR-001 (stack / tooling / pinning), the development guide (SDLC), and <code>HERDR.md</code> (roles + core runbook).</p></div></li>
+        <li><span class="box"></span><div><b>Repo from the template + foundation documents</b><p>Clone the <code>herdr-core-dev</code> template repo (see section 14) — this guide ships inside it at <code>docs/guide/index.html</code> — rename it to the project repo, then fill in: the integration branch <code>coord/&lt;milestone&gt;</code>, the register <code>BACKLOG.md</code>, ADR-001 (stack / tooling / pinning), the development guide (SDLC), and <code>HERDR.md</code> (roles + core runbook).</p></div></li>
         <li><span class="box"></span><div><b>Prepare the agent box</b><p>Install herdr-core + the agent CLIs, the login shell in <code>config.toml</code>, the global git identity, anti-slop per harness, and SSH / Tailscale / tunnel as needed.</p></div></li>
         <li><span class="box"></span><div><b>Decide the model policy (founder)</b><p>The role → harness → model mapping; capacity; reviewer discipline; dispatcher trial or direct drive.</p></div></li>
         <li><span class="box"></span><div><b>Decide the milestone plan</b><p>Tickets with acceptance criteria + a list of open decisions — the founder decides.</p></div></li>
@@ -546,7 +604,7 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between}
 
     <!-- 13 -->
     <section class="doc" id="template" data-search="template repo starter herdr-core-dev clone folder structure new project private skeleton guide html docs guide">
-      <div class="sec-head"><span class="sec-num">13</span><div><h2>Template repo: <code>herdr-core-dev</code></h2><p>This model has one private template repo with the complete folder structure already in place — a new project never starts from an empty repo.</p></div></div>
+      <div class="sec-head"><span class="sec-num">14</span><div><h2>Template repo: <code>herdr-core-dev</code></h2><p>This model has one private template repo with the complete folder structure already in place — a new project never starts from an empty repo.</p></div></div>
       <p><strong><code>herdr-core-dev</code></strong> is a <strong>private</strong> repo that is the starting point for every project using this model. Its contents are not product code, but the finished working framework: foundation documents, the register, ADRs, <code>hc</code> templates — and <strong>this guide itself</strong>, which ships inside the repo as a single self-contained HTML file at <code>docs/guide/index.html</code>. A new project simply <strong>clones, renames, then fills in</strong> its project-specific decisions (ADR-001, the milestone plan, the stack).</p>
       <h3>Folder structure</h3>
       <div class="codeblock"><div class="bar"><span>herdr-core-dev — template structure</span><button class="copybtn" type="button">Copy</button></div><pre><code>herdr-core-dev/
@@ -575,10 +633,10 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between}
         <li><strong>Clone</strong> <code>herdr-core-dev</code> as the new project repo (keep it private), and rename the repo + the title in <code>README.md</code>.</li>
         <li><strong>Fill in the foundation documents:</strong> <code>docs/adr/ADR-001.md</code> (stack / tooling / pinning — a founder decision), adjust <code>docs/development/SDLC.md</code> and <code>HERDR.md</code> as needed, and put the first milestone plan into <code>docs/development/BACKLOG.md</code>.</li>
         <li><strong>Create the integration branch</strong> <code>coord/&lt;milestone&gt;</code> — all ticket work flows through this branch, never directly into <code>main</code>.</li>
-        <li><strong>Continue with the section 12 checklist</strong> from step 2: prepare the agent box, decide the model policy, and so on.</li>
+        <li><strong>Continue with the section 13 checklist</strong> from step 2: prepare the agent box, decide the model policy, and so on.</li>
       </ol>
       <div class="callout green"><b class="t">Keep the guide in sync</b>
-      <p>The guide lives in the repo, so it is versioned with everything else. Whenever the model changes, update <code>docs/guide/index.html</code> <strong>in the same commit</strong> as the change it documents, and add a dated entry to the guide's Versions section (section 15). A model change that ships without its guide update is an incomplete change.</p></div>
+      <p>The guide lives in the repo, so it is versioned with everything else. Whenever the model changes, update <code>docs/guide/index.html</code> <strong>in the same commit</strong> as the change it documents, and add a dated entry to the guide's Versions section (section 16). A model change that ships without its guide update is an incomplete change.</p></div>
       <div class="callout green"><b class="t">A living template, not a one-off</b>
       <p>If, mid-project, a structural improvement proves generally useful (a new CI stage, a nicer register format, a clearer ADR template), <strong>fold it back into <code>herdr-core-dev</code></strong> so the next project inherits it. What never enters the template: project-specific details — names, tickets, product decisions, and secrets.</p></div>
     </section>
@@ -607,6 +665,15 @@ hc schema                      <span class="c"># the API schema</span></code></p
       <div class="codeblock"><div class="bar"><span>git — read-only</span><button class="copybtn" type="button">Copy</button></div><pre><code>git log --oneline
 git ls-remote origin &lt;branch&gt;
 git show &lt;branch&gt;:&lt;file&gt;       <span class="c"># read the register &amp; gate status from a branch</span></code></pre></div>
+      <h3>Git — worktrees (section 08)</h3>
+      <div class="codeblock"><div class="bar"><span>git — worktree</span><button class="copybtn" type="button">Copy</button></div><pre><code>git worktree add ../&lt;repo&gt;-wt/&lt;ticket&gt; \
+  -b task/&lt;ticket&gt; coord/&lt;milestone&gt;   <span class="c"># create a ticket worktree + branch at dispatch</span>
+git worktree add --detach \
+  ../&lt;repo&gt;-wt/review-&lt;ticket&gt; &lt;sha&gt;   <span class="c"># the reviewer's separate checkout</span>
+git worktree list                       <span class="c"># all worktrees + what each has checked out</span>
+git worktree remove ../&lt;repo&gt;-wt/&lt;ticket&gt;  <span class="c"># after integration…</span>
+git branch -d task/&lt;ticket&gt;             <span class="c"># …then delete the merged ticket branch</span>
+git worktree prune                      <span class="c"># clear entries whose directory was deleted by hand</span></code></pre></div>
     </section>
 
     <!-- B -->
@@ -623,11 +690,12 @@ git show &lt;branch&gt;:&lt;file&gt;       <span class="c"># read the register &
     </section>
 
     <!-- 15 -->
-    <section class="doc" id="versions" data-search="versions changelog model changes v1.0 v1.1 v1.2 v1.3 history english guide repo orchestrator harness reasoning">
-      <div class="sec-head"><span class="sec-num">15</span><div><h2>Model versions &amp; changes</h2><p>Changes are recorded here as dated entries — what changed and why.</p></div></div>
+    <section class="doc" id="versions" data-search="versions changelog model changes v1.0 v1.1 v1.2 v1.3 v1.4 history english guide repo orchestrator harness reasoning worktree">
+      <div class="sec-head"><span class="sec-num">16</span><div><h2>Model versions &amp; changes</h2><p>Changes are recorded here as dated entries — what changed and why.</p></div></div>
       <table class="tbl">
         <thead><tr><th>Version</th><th>Contents</th></tr></thead>
         <tbody>
+          <tr><td data-l="Version"><strong>v1.4 — 5 Nov 2026</strong></td><td data-l="Contents">Added section 08, <strong>Git worktrees in practice</strong>: what a worktree is (several working directories on one shared <code>.git</code>), the one-branch-per-worktree guarantee git enforces, the on-disk layout (worktrees as siblings of the main checkout, one directory per ticket), the create / list / remove / prune commands, the worktree lifecycle across dispatch → work → review → integration → cleanup, and the rules and pitfalls (never share a directory, a refused <code>remove</code> is a signal, drift, per-worktree build state). Appendix A gained a matching <code>git worktree</code> command block. Sections after 07 were renumbered (quality gates are now 09, the template repo 14, Versions 16); historical entries below keep the section numbers in force when they were written.</td></tr>
           <tr><td data-l="Version"><strong>v1.3 — 5 Nov 2026</strong></td><td data-l="Contents">The orchestrator role is no longer tied to Muse. The role is filled by <strong>any harness running a strong reasoning model</strong> — the reference is Codex + GPT-6.1-SOL, and Muse also qualifies. The orchestrator itself may also run inside herdr-core, as one of its own terminals. Updated accordingly: the section 3 role card (title, chip, and description), a new Orchestrator row in section 4's mapping table plus an explicit harness-agnostic rule, and the hero summary.</td></tr>
           <tr><td data-l="Version"><strong>v1.2 — 5 Nov 2026</strong></td><td data-l="Contents">The entire guide is now in English. The guide itself now ships inside the template repo as <code>docs/guide/index.html</code> and is kept in sync with the model in the same commit (see section 13). The template repo was re-created with a clean history, so its first commit is already fully in English.</td></tr>
           <tr><td data-l="Version"><strong>v1.1 — 5 Nov 2026</strong></td><td data-l="Contents">The (classic) Herdr TUI was removed from the model — the guide is now core-only: the classic command block in Appendix A, the “two worlds” note, and the classic-pane references were deleted. Added section 13: the private <code>herdr-core-dev</code> template repo as the starting point for new projects (clone → fill in the foundation → go), and checklist step 1 now points at starting from that template.</td></tr>
@@ -642,7 +710,7 @@ git show &lt;branch&gt;:&lt;file&gt;       <span class="c"># read the register &
 
 <footer>
   <div class="wrap">
-    <span><strong>Herdr-Core Development Model</strong> — general guide v1.3 · compiled 5 Nov 2026 from a live development loop.</span>
+    <span><strong>Herdr-Core Development Model</strong> — general guide v1.4 · compiled 5 Nov 2026 from a live development loop.</span>
     <span>Applies to any project using this model · Project-specific details are deliberately not recorded here.</span>
   </div>
 </footer>
