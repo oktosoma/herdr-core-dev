@@ -1,0 +1,699 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+<meta name="color-scheme" content="light dark"/>
+<link rel="icon" href="data:,"/>
+<title>Herdr-Core Development Model — General Guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Serif:ital,wght@0,500;0,600;1,500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f6f4ef; --surface:#fffefa; --surface2:#efece3; --ink:#18211c; --muted:#5d6a62; --faint:#8a968e;
+  --line:#ddd8c9; --line2:#cbc5b2;
+  --accent:#14532d; --accent-ink:#14532d; --accent-bg:#e3efe6; --accent-soft:#eef4ee;
+  --amber:#92400e; --amber-bg:#fdf0dc; --red:#7f1d1d; --red-bg:#fde8e8;
+  --code-bg:#16211b; --code-ink:#d9e8dc; --code-line:#2a3a30;
+  --shadow:0 1px 0 rgba(20,40,25,.06),0 12px 32px -18px rgba(20,40,25,.25);
+  --radius:14px;
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    --bg:#101512; --surface:#171d19; --surface2:#1e2620; --ink:#e9edea; --muted:#a4b0a7; --faint:#7d8a80;
+    --line:#2b352e; --line2:#39453c;
+    --accent:#86cf9f; --accent-ink:#a8dcb8; --accent-bg:#1d3024; --accent-soft:#18261d;
+    --amber:#f0b269; --amber-bg:#332612; --red:#f3a3a3; --red-bg:#331d1d;
+    --code-bg:#0c120e; --code-ink:#cfe3d4; --code-line:#243028;
+    --shadow:0 1px 0 rgba(0,0,0,.3),0 12px 32px -18px rgba(0,0,0,.6);
+  }
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"IBM Plex Sans",system-ui,sans-serif;font-size:16px;line-height:1.65;-webkit-font-smoothing:antialiased}
+a{color:var(--accent-ink)}
+code,kbd{font-family:"IBM Plex Mono",monospace;font-size:.86em;background:var(--surface2);border:1px solid var(--line);border-radius:5px;padding:.08em .35em}
+::selection{background:var(--accent-bg)}
+h1,h2,h3{font-family:"Archivo",sans-serif;line-height:1.15;letter-spacing:-.01em}
+.wrap{max-width:1280px;margin:0 auto;padding:0 20px}
+
+/* ---------- HERO ---------- */
+.hero{border-bottom:2px solid var(--ink);background:var(--surface)}
+.hero-inner{padding:34px 0 30px}
+.hero-top{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;margin-bottom:22px}
+.badge{display:inline-flex;align-items:center;gap:7px;font-family:"IBM Plex Mono",monospace;font-size:11.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;border:1.5px solid var(--ink);border-radius:999px;padding:5px 11px;background:var(--surface)}
+.badge i{width:7px;height:7px;border-radius:50%;background:var(--accent);display:inline-block}
+.badge.dim{border-color:var(--line2);color:var(--muted);font-weight:500}
+.hero h1{font-size:clamp(34px,5.5vw,58px);font-weight:800;margin:0 0 6px;max-width:14ch}
+.hero h1 em{font-family:"IBM Plex Serif",serif;font-weight:600;font-style:italic;letter-spacing:0}
+.hero .lede{font-size:clamp(16px,2vw,19px);color:var(--muted);max-width:68ch;margin:10px 0 0}
+.hero .lede strong{color:var(--ink)}
+.hero-meta{display:grid;grid-template-columns:repeat(4,1fr);gap:0;border:1.5px solid var(--ink);border-radius:var(--radius);overflow:hidden;margin-top:26px;background:var(--surface)}
+.hero-meta div{padding:14px 16px;border-right:1px solid var(--line)}
+.hero-meta div:last-child{border-right:0}
+.hero-meta b{display:block;font-family:"Archivo",sans-serif;font-size:17px;line-height:1.2}
+.hero-meta span{display:block;font-size:12.5px;color:var(--muted);margin-top:3px;line-height:1.45}
+@media(max-width:760px){.hero-meta{grid-template-columns:1fr 1fr}.hero-meta div{border-bottom:1px solid var(--line)}}
+
+/* ---------- LAYOUT ---------- */
+.layout{display:grid;grid-template-columns:264px minmax(0,1fr);gap:34px;padding:28px 0 70px;align-items:start}
+@media(max-width:920px){.layout{grid-template-columns:1fr}}
+.toc{position:sticky;top:18px;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px 14px;box-shadow:var(--shadow)}
+@media(max-width:920px){.toc{position:static}}
+.toc h4{margin:0 0 4px;font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
+.toc nav{display:flex;flex-direction:column}
+.toc a{display:flex;gap:9px;padding:6.5px 8px;border-radius:8px;color:var(--ink);text-decoration:none;font-size:13.5px;line-height:1.35}
+.toc a:hover{background:var(--surface2)}
+.toc a.active{background:var(--accent-bg);color:var(--accent-ink);font-weight:600}
+.toc a .n{font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--faint);padding-top:2px;min-width:18px}
+.toc a.active .n{color:var(--accent-ink)}
+.search{margin:12px 0 6px}
+.search input{width:100%;padding:9px 11px;border:1px solid var(--line2);border-radius:9px;background:var(--bg);color:var(--ink);font:inherit;font-size:13.5px}
+.search input:focus{outline:2px solid var(--accent);outline-offset:1px}
+.toc-note{font-size:12px;color:var(--muted);border-top:1px dashed var(--line2);margin-top:12px;padding-top:10px;line-height:1.5}
+
+/* ---------- SECTIONS ---------- */
+section.doc{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:28px 30px;margin-bottom:22px;box-shadow:var(--shadow);scroll-margin-top:16px}
+@media(max-width:560px){section.doc{padding:22px 18px}}
+section.doc.hidden-by-search{display:none}
+.sec-head{display:flex;gap:14px;align-items:baseline;border-bottom:2px solid var(--ink);padding-bottom:13px;margin-bottom:18px}
+.sec-num{font-family:"IBM Plex Mono",monospace;font-weight:600;font-size:13px;background:var(--ink);color:var(--bg);border-radius:7px;padding:3px 8px;white-space:nowrap;transform:translateY(-2px)}
+.sec-head h2{margin:0;font-size:24px;font-weight:800}
+.sec-head p{margin:3px 0 0;color:var(--muted);font-size:14px}
+section.doc h3{font-size:16.5px;margin:24px 0 8px}
+section.doc h3:first-of-type{margin-top:4px}
+section.doc p{margin:0 0 12px}
+section.doc ul,section.doc ol{margin:0 0 14px;padding-left:22px}
+section.doc li{margin-bottom:6px}
+section.doc li::marker{color:var(--accent)}
+.small{font-size:13.5px;color:var(--muted)}
+mark{background:var(--amber-bg);color:inherit;padding:0 2px;border-radius:3px}
+
+/* callouts */
+.callout{border-radius:12px;padding:14px 16px;margin:16px 0;font-size:14.5px;line-height:1.6}
+.callout b.t{display:block;font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;margin-bottom:5px}
+.callout.green{background:var(--accent-soft);border:1px solid var(--accent)}
+.callout.amber{background:var(--amber-bg);border:1px solid var(--amber)}
+.callout.red{background:var(--red-bg);border:1px solid var(--red)}
+.callout p:last-child{margin-bottom:0}
+
+/* flow */
+.flow{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:18px 0 6px}
+@media(max-width:700px){.flow{grid-template-columns:1fr}}
+.step{border:1px solid var(--line2);border-radius:12px;padding:14px 15px;background:var(--bg);position:relative}
+.step .k{font-family:"IBM Plex Mono",monospace;font-size:11px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--accent-ink)}
+.step b{display:block;font-family:"Archivo",sans-serif;font-size:15px;margin:4px 0 4px}
+.step p{font-size:13.5px;color:var(--muted);margin:0;line-height:1.55}
+.step .arr{position:absolute;right:-9px;top:50%;transform:translateY(-50%);z-index:2;background:var(--surface);border:1px solid var(--line2);width:17px;height:17px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--muted)}
+@media(max-width:700px){.step .arr{right:auto;left:50%;top:auto;bottom:-9px;transform:translateX(-50%) rotate(90deg)}}
+.step:nth-child(3n) .arr{display:none}
+@media(max-width:700px){.step .arr{display:flex!important}.step:last-child .arr{display:none!important}}
+
+/* role cards */
+.roles{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:16px 0}
+@media(max-width:700px){.roles{grid-template-columns:1fr}}
+.role{border:1px solid var(--line2);border-radius:13px;padding:16px 17px;background:var(--bg)}
+.role.wide{grid-column:1/-1}
+.role-head{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;margin-bottom:7px}
+.role h3{margin:0;font-size:16px}
+.chip{font-family:"IBM Plex Mono",monospace;font-size:11px;font-weight:600;background:var(--accent-bg);color:var(--accent-ink);border-radius:999px;padding:3px 9px;white-space:nowrap}
+.chip.neutral{background:var(--surface2);color:var(--muted)}
+.role p{font-size:14px;margin:0 0 9px}
+.role .limits{border-top:1px dashed var(--line2);padding-top:9px;font-size:13.5px}
+.role .limits b{font-family:"IBM Plex Mono",monospace;font-size:10.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--red);display:block;margin-bottom:4px}
+.role .limits ul{margin:0;padding-left:17px}
+.role .limits li{margin-bottom:3px}
+
+/* tables */
+.tbl{width:100%;border-collapse:collapse;margin:14px 0 18px;font-size:14px}
+.tbl th{font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.06em;text-transform:uppercase;text-align:left;color:var(--muted);border-bottom:2px solid var(--ink);padding:8px 10px}
+.tbl td{border-bottom:1px solid var(--line);padding:10px;vertical-align:top}
+.tbl tr:last-child td{border-bottom:0}
+@media(max-width:640px){
+  .tbl thead{display:none}
+  .tbl tr{display:block;border:1px solid var(--line2);border-radius:11px;padding:10px 12px;margin-bottom:10px;background:var(--bg)}
+  .tbl td{display:block;border:0;padding:3px 0}
+  .tbl td::before{content:attr(data-l);display:block;font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.07em;text-transform:uppercase;color:var(--faint)}
+}
+
+/* fact groups */
+.facts{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:14px 0}
+@media(max-width:700px){.facts{grid-template-columns:1fr}}
+.fact{border:1px solid var(--line);border-radius:12px;padding:15px 16px;background:var(--bg)}
+.fact h3{margin:0 0 7px;font-size:14.5px;display:flex;gap:8px;align-items:center}
+.fact h3 .dot{width:8px;height:8px;border-radius:2px;background:var(--accent);flex:none}
+.fact p,.fact li{font-size:13.8px}
+.fact ul{margin:0;padding-left:18px}
+.fact li{margin-bottom:4px}
+.fact p:last-child{margin:0}
+
+/* code blocks */
+.codeblock{background:var(--code-bg);border:1px solid var(--code-line);border-radius:12px;margin:12px 0 18px;overflow:hidden}
+.codeblock .bar{display:flex;justify-content:space-between;align-items:center;padding:8px 12px;border-bottom:1px solid var(--code-line)}
+.codeblock .bar span{font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:#8fa896}
+.copybtn{font-family:"IBM Plex Mono",monospace;font-size:11px;background:transparent;border:1px solid var(--code-line);color:var(--code-ink);border-radius:6px;padding:4px 9px;cursor:pointer}
+.copybtn:hover{border-color:var(--accent)}
+.codeblock pre{margin:0;padding:14px 16px;overflow-x:auto}
+.codeblock code{background:none;border:0;padding:0;color:var(--code-ink);font-size:13px;line-height:1.75;display:block;white-space:pre}
+.codeblock code .c{color:#7d957f}
+
+/* timeline */
+.timeline{margin:16px 0 4px;border-left:2px solid var(--line2);padding-left:0}
+.tl-item{position:relative;padding:0 0 20px 26px}
+.tl-item:last-child{padding-bottom:4px}
+.tl-item::before{content:"";position:absolute;left:-7px;top:5px;width:12px;height:12px;border-radius:50%;background:var(--surface);border:2.5px solid var(--accent)}
+.tl-item b.ph{font-family:"Archivo",sans-serif;font-size:15.5px;display:block}
+.tl-item .who{font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--accent-ink);text-transform:uppercase;letter-spacing:.06em}
+.tl-item p{font-size:14.5px;margin:5px 0 0}
+
+/* checklist */
+.checklist{list-style:none!important;padding:0!important;margin:14px 0!important;counter-reset:ck}
+.checklist li{display:flex;gap:13px;border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:10px!important;background:var(--bg)}
+.checklist .box{flex:none;width:22px;height:22px;border:2px solid var(--accent);border-radius:6px;margin-top:2px;position:relative}
+.checklist li b{display:block;font-family:"Archivo",sans-serif;font-size:15px}
+.checklist li p{font-size:14px;margin:2px 0 0;color:var(--muted)}
+
+/* principles */
+.principles{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0}
+@media(max-width:700px){.principles{grid-template-columns:1fr}}
+.principle{border:1px solid var(--line);border-left:4px solid var(--accent);border-radius:10px;padding:13px 15px;background:var(--bg)}
+.principle b{display:block;font-size:14.5px;margin-bottom:3px}
+.principle p{font-size:13.5px;color:var(--muted);margin:0}
+
+/* chart */
+.chart{border:1px solid var(--line2);border-radius:12px;padding:18px;background:var(--bg);margin:16px 0}
+.chart h3{margin:0 0 4px;font-size:15px}
+.bars{margin-top:14px;display:flex;flex-direction:column;gap:13px}
+.bar-row{display:grid;grid-template-columns:150px 1fr 74px;gap:12px;align-items:center;font-size:13.5px}
+@media(max-width:520px){.bar-row{grid-template-columns:104px 1fr 64px}}
+.bar-track{height:20px;background:var(--surface2);border-radius:6px;overflow:hidden}
+.bar-fill{height:100%;border-radius:6px;background:var(--accent)}
+.bar-fill.mid{background:#5b8a6a}.bar-fill.high{background:#33523f}
+@media (prefers-color-scheme:dark){.bar-fill.mid{background:#4c7a5c}.bar-fill.high{background:#2e4a38}}
+.bar-val{font-family:"IBM Plex Mono",monospace;font-weight:600;text-align:right}
+
+footer{border-top:2px solid var(--ink);padding:26px 0 44px;color:var(--muted);font-size:13.5px}
+footer .wrap{display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between}
+.noresult{display:none;background:var(--amber-bg);border:1px solid var(--amber);border-radius:12px;padding:14px 16px;font-size:14px;margin-bottom:18px}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap hero-inner">
+    <div class="hero-top">
+      <span class="badge"><i></i> General guide · Applies to all projects</span>
+      <span class="badge dim">Model v1.2 — 5 Nov 2026</span>
+    </div>
+    <h1>Herdr-Core <em>Development Model</em></h1>
+    <p class="lede">One multi-agent development model on top of <strong>herdr-core</strong>: who holds which role, how a ticket flows from dispatch to integration, which quality gates apply, and how the loop is monitored. Compiled from a live loop that already ran end-to-end — <strong>with no project-specific details</strong>, so a new project can simply follow this model.</p>
+    <div class="hero-meta">
+      <div><b>7 roles</b><span>Founder, Orchestrator, Architect, Dispatcher, Worker, Reviewer, Platform Owner</span></div>
+      <div><b>2 harnesses</b><span>Codex for reasoning · omp for implementation &amp; review</span></div>
+      <div><b>1 register</b><span><code>BACKLOG.md</code> — the single source of truth, written only by the Orchestrator</span></div>
+      <div><b>1 ticket = 1 branch</b><span>One worktree per agent, independent review, integration by the Orchestrator</span></div>
+    </div>
+  </div>
+</header>
+
+<div class="wrap layout">
+  <aside class="toc" aria-label="Table of contents">
+    <h4>Contents</h4>
+    <div class="search"><input id="searchInput" type="search" placeholder="Search this guide…" aria-label="Search this guide"/></div>
+    <nav id="tocNav">
+      <a href="#purpose"><span class="n">01</span>Purpose &amp; scope</a>
+      <a href="#overview"><span class="n">02</span>Overview</a>
+      <a href="#roles"><span class="n">03</span>Roles</a>
+      <a href="#model"><span class="n">04</span>Model &amp; harness policy</a>
+      <a href="#substrate"><span class="n">05</span>The herdr-core substrate</a>
+      <a href="#osc"><span class="n">06</span>OSC 7501 — observability</a>
+      <a href="#lifecycle"><span class="n">07</span>Ticket lifecycle</a>
+      <a href="#gates"><span class="n">08</span>Quality gates</a>
+      <a href="#infra"><span class="n">09</span>Reference infrastructure</a>
+      <a href="#monitoring"><span class="n">10</span>Monitoring &amp; reporting</a>
+      <a href="#principles"><span class="n">11</span>Operating principles</a>
+      <a href="#checklist"><span class="n">12</span>New-project checklist</a>
+      <a href="#template"><span class="n">13</span>Template repo: herdr-core-dev</a>
+      <a href="#appendix-a"><span class="n">A</span>Appendix — commands</a>
+      <a href="#appendix-b"><span class="n">B</span>Appendix — founder decisions</a>
+      <a href="#versions"><span class="n">15</span>Versions &amp; changes</a>
+    </nav>
+    <p class="toc-note">Guide language: English throughout. Agent prompts are written in English; communication with the founder follows the founder's register.</p>
+  </aside>
+
+  <main id="main">
+    <div class="noresult" id="noResult">No section matches that search. Try a different keyword, or clear the search box.</div>
+
+    <!-- 01 -->
+    <section class="doc" id="purpose" data-search="purpose scope not covered stack product decisions">
+      <div class="sec-head"><span class="sec-num">01</span><div><h2>Purpose &amp; scope</h2><p>What this guide exists for — and what it deliberately does not govern.</p></div></div>
+      <p>This guide defines one multi-agent development model on top of herdr-core: who holds which role, how a ticket flows from dispatch to integration, which quality gates apply, and how the loop is monitored. <strong>One project = one application of this model.</strong></p>
+      <p>If the model changes, record the change as a dated entry in the Versions section at the end of this guide — never silently edit a rule that is currently in force.</p>
+      <div class="callout amber"><b class="t">Not part of this guide</b>
+      <p>The project stack (language, framework, database), product content, pricing / billing, and provider identity. All of those are <strong>founder decisions, made per project</strong> — this model governs only how the work is done, not what is built.</p></div>
+    </section>
+
+    <!-- 02 -->
+    <section class="doc" id="overview" data-search="overview actors ticket flow summary substrate git cron">
+      <div class="sec-head"><span class="sec-num">02</span><div><h2>Overview</h2><p>Seven actors, one substrate, one ticket flow.</p></div></div>
+      <p><strong>The substrate:</strong> herdr-core (<code>hc</code>) on a single Linux agent box. Git as the source of truth (register, ADRs, branches). A cron monitor as the heartbeat of the loop.</p>
+      <h3>One ticket, in brief</h3>
+      <div class="flow">
+        <div class="step"><span class="k">Step 1</span><b>Founder sets the ticket</b><p>Ticket + acceptance criteria are set; open questions are decided by the founder.<span class="arr">→</span></p></div>
+        <div class="step"><span class="k">Step 2</span><b>Orchestrator dispatches</b><p>A complete brief to the worker — its own worktree + branch per ticket.<span class="arr">→</span></p></div>
+        <div class="step"><span class="k">Step 3</span><b>Worker implements</b><p>Code + tests in its worktree, then reports DONE with a candidate commit.<span class="arr">→</span></p></div>
+        <div class="step"><span class="k">Step 4</span><b>Reviewer verifies</b><p>Independently, from a separate checkout — re-running the checks, not trusting the transcript.<span class="arr">→</span></p></div>
+        <div class="step"><span class="k">Step 5</span><b>Orchestrator integrates</b><p>Merge into the integration branch, re-verify, update the register.<span class="arr">→</span></p></div>
+        <div class="step"><span class="k">Step 6</span><b>Next ticket</b><p>The loop continues until the milestone is done; the cron monitor keeps the heartbeat.</p></div>
+      </div>
+      <div class="callout green"><b class="t">The separation principle underneath everything</b>
+      <p>The one who <em>decides</em> (founder), the one who <em>runs the loop</em> (orchestrator), the one who <em>does the work</em> (worker), and the one who <em>verifies</em> (reviewer) are different parties. No agent ever both produces and approves its own work.</p></div>
+    </section>
+
+    <!-- 03 -->
+    <section class="doc" id="roles" data-search="roles founder orchestrator architect dispatcher worker reviewer platform owner responsibilities hard limits">
+      <div class="sec-head"><span class="sec-num">03</span><div><h2>Roles</h2><p>Responsibilities and hard limits for every role. The limits are not advice — they are part of the model.</p></div></div>
+      <div class="roles">
+        <article class="role wide">
+          <div class="role-head"><h3>Founder</h3><span class="chip neutral">Product owner · human</span></div>
+          <p>Decides everything that is open (architecture, product, billing, identity, infrastructure), tests dev, holds credentials via the vault, and approves dispatch across milestones. The only party allowed to make an open decision.</p>
+        </article>
+        <article class="role wide">
+          <div class="role-head"><h3>Orchestrator — Muse</h3><span class="chip neutral">The founder's personal agent</span></div>
+          <p>Runs the loop: dispatches, integrates, reports, and recovers. The single merger into the integration branch.</p>
+          <div class="limits"><b>Hard limits</b><ul>
+            <li>The only writer of the register — never delegates register writing</li>
+            <li>Never makes an open decision</li>
+            <li>Never merges into <code>main</code></li>
+            <li>Never dispatches beyond the milestone currently in progress</li>
+          </ul></div>
+        </article>
+        <article class="role">
+          <div class="role-head"><h3>Architect</h3><span class="chip">Codex · GPT-6.1-SOL</span></div>
+          <p>Advisory. Answers hard architecture questions; recommendations are written up as ADRs. Never touches an implementation branch.</p>
+          <div class="limits"><b>Hard limits</b><ul>
+            <li>Never holds <code>/goal</code></li>
+            <li>Never writes the register</li>
+            <li>Never changes code</li>
+          </ul></div>
+        </article>
+        <article class="role">
+          <div class="role-head"><h3>Dispatcher</h3><span class="chip">Codex · GPT-6.1-SOL · core phase, optional</span></div>
+          <p>One pane in the core that holds <code>/goal</code> per ticket (acceptance + a hard stop clause). Dispatch + collect only.</p>
+          <div class="limits"><b>Hard limits</b><ul>
+            <li>No architecture decisions; no register writes</li>
+            <li>No writable worktree — reads the integration branch / <code>main</code> only</li>
+            <li>All escalations go to the orchestrator</li>
+            <li>Kill switch: the orchestrator takes over driving directly</li>
+          </ul></div>
+        </article>
+        <article class="role">
+          <div class="role-head"><h3>Worker</h3><span class="chip">omp · Terra / Luna</span></div>
+          <p>Implements one ticket in its own worktree + branch: writes code + tests, then reports DONE with a candidate commit + evidence.</p>
+          <div class="limits"><b>Hard limits</b><ul>
+            <li>One ticket per agent; never writes the register</li>
+            <li>Never touches the dev / prod database — verification uses a disposable DB</li>
+          </ul></div>
+        </article>
+        <article class="role">
+          <div class="role-head"><h3>Reviewer</h3><span class="chip">omp · GPT-6.1-Terra · single</span></div>
+          <p>Verifies a candidate independently from a separate checkout. Independent reproduction is mandatory. Verdict: <strong>ACCEPT / CHANGES REQUESTED / REJECT</strong>, with reasons.</p>
+          <div class="limits"><b>Hard limits</b><ul>
+            <li>One reviewer at a time (single-reviewer discipline)</li>
+            <li>Never decides an open question — asks for an explicit founder decision</li>
+          </ul></div>
+        </article>
+        <article class="role wide">
+          <div class="role-head"><h3>Platform Owner</h3><span class="chip">omp · as assigned</span></div>
+          <p>Owns the test harness + CI as the milestone gate, plus follow-up automation once the gate passes. One owner for harness + CI — never split.</p>
+        </article>
+      </div>
+      <div class="callout amber"><b class="t">A note on the dispatcher</b>
+      <p>The dispatcher is a <em>core-phase</em> pattern. Its trial is <strong>limited</strong>: it starts only after the first ticket has been integrated in the core with the orchestrator driving directly via <code>hc</code>. Until the trial is proven, the orchestrator drives directly.</p></div>
+    </section>
+
+    <!-- 04 -->
+    <section class="doc" id="model" data-search="model harness policy codex sol terra luna quota pool footer no-daemon anti-slop shim">
+      <div class="sec-head"><span class="sec-num">04</span><div><h2>Model &amp; harness policy</h2><p>The reference role → harness → model mapping, plus the rules that go with it.</p></div></div>
+      <table class="tbl">
+        <thead><tr><th>Need</th><th>Harness</th><th>Model</th></tr></thead>
+        <tbody>
+          <tr><td data-l="Need"><strong>Architect, dispatcher, other reasoning</strong></td><td data-l="Harness">Codex</td><td data-l="Model"><code>GPT-6.1-SOL</code></td></tr>
+          <tr><td data-l="Need"><strong>Workers that need minimal hallucination; the reviewer</strong></td><td data-l="Harness">omp</td><td data-l="Model"><code>GPT-6.1-Terra</code></td></tr>
+          <tr><td data-l="Need"><strong>Light / fast work</strong></td><td data-l="Harness">omp</td><td data-l="Model"><code>GPT-6-Luna</code></td></tr>
+        </tbody>
+      </table>
+      <p class="small">The selection logic: reasoning and judgment (architecture, dispatch, review) get the strongest model or the one with the lowest hallucination rate; light-volume work is absorbed by the fast model so the flagship quota lasts. The reviewer is deliberately <em>not</em> a light model — a careless verdict is the most expensive failure in this loop.</p>
+      <h3>Rules that go with it</h3>
+      <ul>
+        <li><strong>One account, one quota pool.</strong> All models run on a single subscription account via OAuth. Auth follows the harness defaults already set on the box — never write per-agent credentials into a brief; that way a model can never be swapped between harnesses by accident.</li>
+        <li><strong>Light models absorb volume</strong> so the flagship model's quota lasts. Do not over-parallelize workers.</li>
+        <li><strong>Models are verified from the footer, not by asking the founder.</strong> Harness defaults already match the locked mapping; the monitor verifies the agent's footer — the founder acts only if the footer shows a different model.</li>
+        <li><strong>Codex must run with <code>--no-daemon</code></strong> (including in templates), or the command executes outside <code>hc</code>.</li>
+        <li><strong>The omp model is set at start</strong> via <code>--model &lt;id&gt;</code> — a full ID is safer; a fuzzy match can land on the wrong model. Changing model mid-flight = restart the session with the new model.</li>
+      </ul>
+      <div class="callout red"><b class="t">Harness selection criterion — no shims</b>
+      <p>A harness enters the loop <strong>only if it officially supports the model assigned to it</strong>. An unofficial shim that routes one CLI's model through another CLI is not a route: a CLI that officially runs only its own vendor's models cannot take a role assigned to another vendor's model. A harness removed from the loop stays installed + authenticated as a <strong>fallback</strong>, not a loop role, until a founder decision brings it back.</p></div>
+      <h3>Anti-slop</h3>
+      <p>Anti-slop is a <strong>filter, not a style guide</strong> — installed per harness: a plugin for Codex / omp / Claude, a global skill for OpenCode, and a manual copy to <code>~/.config/muse/skills/</code> for Muse Code. Mode <code>during</code>, settings shared per machine. The filter never replaces the project's design direction.</p>
+    </section>
+
+    <!-- 05 -->
+    <section class="doc" id="substrate" data-search="substrate herdr-core hc binary holder pty reboot state config label terminal template shell machine security sandbox">
+      <div class="sec-head"><span class="sec-num">05</span><div><h2>The substrate: herdr-core</h2><p>Facts about <code>hc</code> that shape how the work is done. These are the ones that surprise you if you don't know them.</p></div></div>
+      <div class="facts">
+        <div class="fact"><h3><span class="dot"></span>Binary &amp; holder process</h3>
+          <p>A single <code>hc</code> binary = CLI + background core. A holder process owns the PTYs, so a core crash / restart / update <strong>does not kill the programs</strong> that are running. The app is only a client.</p></div>
+        <div class="fact"><h3><span class="dot"></span>Reboot = start over</h3>
+          <p>Programs <strong>do not survive a reboot / host shutdown</strong> — preserved terminals come back as fresh shells, not reruns. Budget for it: re-launch + re-brief after every box restart.</p></div>
+        <div class="fact"><h3><span class="dot"></span>State &amp; config</h3>
+          <ul><li>State: <code>~/.local/state/herdr-core/&lt;session&gt;/</code> (logs live here too)</li><li>Config: <code>~/.config/herdr-core/config.toml</code></li><li><code>HC_SOCKET</code> overrides the endpoint</li></ul></div>
+        <div class="fact"><h3><span class="dot"></span>There is no “space” command</h3>
+          <p>Grouping is expressed as a <strong>per-project name prefix + labels</strong>: <code>project=&lt;p&gt;</code> and <code>ticket=&lt;ID&gt;</code> on every working terminal. Labels are a filter (visible via <code>hc get</code>); they never appear in <code>hc ls</code> output. A label is not a name — a name identifies one terminal for send / read / attach / kill.</p></div>
+        <div class="fact"><h3><span class="dot"></span>One terminal per agent</h3>
+          <ul><li>Spawn with <code>hc run --bg --name &lt;stable-name&gt; --label …</code></li><li>Default parentage; <code>--outlive-parent</code> only for deliberately independent workers</li><li>Report back via <code>hc send $HC_TERMINAL_ID</code></li><li><code>hc wait</code> is a check-in, <strong>not</strong> completion — scripts must loop on <code>hc wait</code> / <code>hc get</code></li></ul></div>
+        <div class="fact"><h3><span class="dot"></span>Attach &amp; hard prohibitions</h3>
+          <ul><li><code>hc attach</code> = 1 terminal per invocation, no built-in split — splitting needs an external multiplexer (tmux), each running one <code>attach</code></li><li>Detach: <code>Ctrl+\</code>. Closing the window is safe — the server owns the work</li><li><strong>Never</strong> run <code>herdr server stop</code> (it kills every pane process)</li><li><strong>Never</strong> kill a terminal behind a pane the founder is watching</li></ul></div>
+        <div class="fact"><h3><span class="dot"></span>Templates</h3>
+          <p>Line-based frontmatter (<code>command</code> / <code>description</code> / <code>ready</code> / <code>submit</code> / <code>stop</code> / <code>paste_gap_ms</code>); commands run via <code>sh</code>. Templates live in <code>~/.config/herdr-core/templates</code>. The default waits for the first OSC report, with a 30-second timeout.</p></div>
+        <div class="fact"><h3><span class="dot"></span>Shell — the dash trap</h3>
+          <p>The default shell is <code>$SHELL</code> or <code>/bin/sh</code> — on Debian that is <strong>dash</strong>, which reads neither <code>~/.bashrc</code> nor <code>~/.profile</code>. Set an explicit login shell in <code>config.toml</code> (<code>shell = ["bash", "--login"]</code>) or use absolute paths / <code>bash -lc</code> in template commands. Verify with <code>hc exec --on &lt;vm&gt; sh -c 'command -v …'</code>.</p></div>
+        <div class="fact"><h3><span class="dot"></span>Multi-box (machines)</h3>
+          <ul><li><code>hc machine add/ls/login/update/rename/rm</code>; SSH targets include Hosts from <code>~/.ssh/config</code></li><li>A remote core has its own programs / history / files</li><li>Machine names are <strong>local per laptop</strong></li><li>Remote login stdout must be clean — a chatty <code>~/.bashrc</code> / motd breaks the connection; print only for interactive shells</li></ul></div>
+        <div class="fact"><h3><span class="dot"></span>Security: there is no sandbox</h3>
+          <ul><li>The core runs commands with your account's access; socket 0700; no API password</li><li>The state directory stores terminal output <strong>unencrypted</strong></li><li><code>hc file</code> / <code>hc exec</code> give any API client file read/write — the same trust boundary as a shell</li><li>Never forward the raw API / socket; never run the core as root</li><li>Telemetry is ON by default in releases (<code>"telemetry": false</code> turns it off); updates verify SHA-256 against an HTTPS manifest</li></ul></div>
+      </div>
+    </section>
+
+    <!-- 06 -->
+    <section class="doc" id="osc" data-search="osc 7501 observability status idle working done blocked error reported app foreground">
+      <div class="sec-head"><span class="sec-num">06</span><div><h2>OSC 7501 — observability only</h2><p>How the core knows an agent's status: from the agent's own reports, never from guessing at the screen.</p></div></div>
+      <ul>
+        <li><strong>Format:</strong> <code>ESC ] 7501; key=value:key=value ST</code> — state <code>idle / working / done / blocked / error / clear</code>, base64 msg/title, progress 0–100.</li>
+        <li>The core <em>“stores what is reported; it never guesses status from the screen.”</em> An OSC report overwrites the agent label; a foreground-process change alone does <strong>not</strong> change the label.</li>
+        <li><strong>Never use the foreground process name as an agent's identity.</strong> Gate automation on the OSC status when the agent reports it; otherwise on <code>--output</code> / the exit code.</li>
+        <li><strong>OSC support differs per version — verify per agent with <code>hc get</code></strong> (look for <code>reported: true</code> + the <code>app</code> field) before building automation on top of it.</li>
+      </ul>
+      <table class="tbl">
+        <thead><tr><th>Agent</th><th>Known OSC reporting status</th></tr></thead>
+        <tbody>
+          <tr><td data-l="Agent"><strong>omp</strong></td><td data-l="Status">Reports (version-dependent)</td></tr>
+          <tr><td data-l="Agent"><strong>Codex</strong> (typed from a shell)</td><td data-l="Status">Generally does not report — the label stays <code>bash</code>. Spawn Codex terminals via <code>hc run --bg --name &lt;name&gt; codex --no-daemon</code></td></tr>
+          <tr><td data-l="Agent"><strong>Muse Code</strong></td><td data-l="Status">Not yet verified</td></tr>
+        </tbody>
+      </table>
+      <ul>
+        <li>Never put tmux / screen inside a Herdr pane — it breaks reporting.</li>
+        <li><code>blocked</code> is a UX guard, not an access boundary (any client can <code>--force</code>).</li>
+        <li><strong>Optional, decide per project:</strong> one beacon terminal that emits the orchestrator's status — <em>working</em> while dispatching/reviewing, <em>idle</em> while waiting, <em>blocked</em> while waiting on a founder decision.</li>
+      </ul>
+    </section>
+
+    <!-- 07 -->
+    <section class="doc" id="lifecycle" data-search="ticket lifecycle branch worktree dispatch review integration register backlog adr capacity commit identity">
+      <div class="sec-head"><span class="sec-num">07</span><div><h2>Ticket lifecycle</h2><p>From brief to register — an order that must not be shuffled.</p></div></div>
+      <p><strong>Branch convention:</strong> one ticket → one branch → one worktree. Integration branch <code>coord/&lt;milestone&gt;</code>; ticket branches <code>task/&lt;ticket-id&gt;</code>; architecture documents on <code>docs/&lt;area&gt;</code>.</p>
+      <div class="timeline">
+        <div class="tl-item"><span class="who">Orchestrator</span><b class="ph">Dispatch</b>
+          <p>The orchestrator writes the brief: goal, acceptance criteria, base commit, worktree, harness + model, and a hard stop clause. The agent works in its worktree, then reports DONE with a candidate commit SHA + evidence.</p></div>
+        <div class="tl-item"><span class="who">Reviewer</span><b class="ph">Independent review</b>
+          <p>The reviewer checks out the candidate from a <strong>separate</strong> checkout and performs an independent reproduction — re-running the verification, not trusting the worker's transcript. Verdict ACCEPT / CHANGES REQUESTED / REJECT, with reasons. For open questions, the reviewer asks for an explicit decision — it never decides quietly.</p></div>
+        <div class="tl-item"><span class="who">Orchestrator</span><b class="ph">Integration</b>
+          <p>The orchestrator merges into the integration branch. If the branch has moved: merge first, re-verify lint / typecheck / build + smoke, then merge. Dev keeps serving from the integration branch while agents work — the only pause is a brief rebuild/restart at integration time, <strong>announced in advance</strong> with the SHA + what changed.</p></div>
+        <div class="tl-item"><span class="who">Orchestrator</span><b class="ph">Register updated</b>
+          <p>The register (<code>BACKLOG.md</code>) is updated — by the orchestrator only. Then the loop moves on to the next ticket.</p></div>
+      </div>
+      <h3>The register — <code>BACKLOG.md</code></h3>
+      <ul>
+        <li>The single source of truth for ticket status, decisions, and evidence. Written <strong>only</strong> by the orchestrator; agents never write the register.</li>
+        <li>What gets recorded is <strong>outcomes + decisions</strong>, not verbatim prompt text — there is no verbatim prompt log in the repo. Agent session transcripts on the box remain the backstop if the exact text is ever needed.</li>
+      </ul>
+      <h3>Decisions — ADRs</h3>
+      <ul>
+        <li>Architecture / product decisions are recorded as numbered ADRs, linked from the main ADR.</li>
+        <li>Open decisions are founder decisions — the orchestrator never makes them, never dispatches beyond the current milestone, and never merges into <code>main</code>.</li>
+      </ul>
+      <h3>Capacity &amp; commit identity</h3>
+      <ul>
+        <li><strong>There is no cap on the number of active agents;</strong> run as many as needed. Single-reviewer discipline stays until it is changed again. <span class="small">(Historical note: the original rule of “at most two active + one reviewer” was deliberately changed — capacity is a project decision, recorded in an ADR.)</span></li>
+        <li>Set the global git identity on the box once (<code>user.name</code> / <code>user.email</code>) so new agents can commit without workarounds; SSH / deploy keys are not touched.</li>
+        <li>Agents must not touch the dev database — verification uses a disposable DB; migrations that ship with an integration are announced in advance.</li>
+      </ul>
+    </section>
+
+    <!-- 08 -->
+    <section class="doc" id="gates" data-search="quality gates test harness ci platform owner lint typecheck unit build contract smoke anti-slop">
+      <div class="sec-head"><span class="sec-num">08</span><div><h2>Quality gates</h2><p>No ticket passes because it “looks right”.</p></div></div>
+      <h3>Test harness + CI = the milestone gate</h3>
+      <p>Owned by <strong>one platform owner</strong>. CI stages, in order:</p>
+      <ol>
+        <li>Pinned install</li>
+        <li>Lint / typecheck / unit / build</li>
+        <li>Isolated DB + migrations + integration</li>
+        <li>Contract validation against real responses</li>
+        <li>Built app + health + smoke check</li>
+      </ol>
+      <h3>Tests</h3>
+      <ul>
+        <li>The stack's native runner (or equivalent); tests under <code>tests/</code> (unit / integration / contract / fixtures); root scripts for test / lint / typecheck; CI enforces them.</li>
+        <li><strong>Implementation tickets must ship tests.</strong></li>
+      </ul>
+      <h3>Review &amp; criteria</h3>
+      <ul>
+        <li>Independent review stands on its own — the reviewer reproduces; it does not read the report and nod.</li>
+        <li>A criterion whose cost is staging-only code that tests itself (not the product) must be surfaced: propose a cheap check against the real thing, and hand the criterion change to the founder.</li>
+        <li>Anti-slop mode <code>during</code> on every harness; the filter never replaces the project's design direction.</li>
+      </ul>
+    </section>
+
+    <!-- 09 -->
+    <section class="doc" id="infra" data-search="infrastructure agent box vm debian memory swap footprint rss tailscale cloudflare secret vault autowake cooldown resources">
+      <div class="sec-head"><span class="sec-num">09</span><div><h2>Reference infrastructure</h2><p>The environment this loop is proven to run in — a new project may adjust it, as long as the discipline stays the same.</p></div></div>
+      <h3>Agent box</h3>
+      <ul>
+        <li>A Linux VM — reference: Debian 13, 4 vCPU / 8 GB / 20 GB on <code>/data</code>, HOME <code>/data/home</code>, passwordless sudo, Docker.</li>
+        <li>Free-tier continuous-run limit: 8 hours. Idle pause after 30 minutes <em>without</em> cooldown. Cooldown follows <strong>only</strong> a max-runtime pause, in tiers: 5–20 / 60–75 / 120–135 minutes.</li>
+        <li><strong>Autowake</strong> is scoped to the boxes the project uses; a cooldown guard holds auto-wake until <code>cooldownUntil</code>; a manual hold file can hold all auto-wake. Never force a wake without demand — wake only for clearly active work.</li>
+      </ul>
+      <h3>Connectivity &amp; secrets</h3>
+      <ul>
+        <li><strong>Private:</strong> Tailscale for inter-box services (for example a dev database via <code>tailscale serve</code>).</li>
+        <li><strong>Public dev URL:</strong> a Cloudflare named tunnel — cloudflared inside the box + a CNAME → <code>&lt;tunnel-id&gt;.cfargotunnel.com</code>.</li>
+        <li>Identity and secrets for <strong>staging vs production are strictly separate</strong>.</li>
+        <li>Secrets live only in mode-600 env files on the box or in the Secure Vault — never in the repo / chat / memory. A credential that has to change hands is offered via a <strong>vault card first</strong>; a one-time paste is planted once, never recorded, and then flagged for rotation.</li>
+      </ul>
+      <div class="chart">
+        <h3>Resource discipline — idle agent footprint</h3>
+        <p class="small" style="margin:0">An 8 GB box running the full loop lives under memory pressure — swap can sit at 100%. Measure footprint as <strong>RSS + swap per process tree</strong>: RSS alone lies under pressure, because idle pages get swapped out. Observed on the reference box, 5 Nov 2026, at idle:</p>
+        <div class="bars">
+          <div class="bar-row"><span>Single-process harness (lightest)</span><div class="bar-track"><div class="bar-fill" style="width:68%"></div></div><span class="bar-val">±219 MB</span></div>
+          <div class="bar-row"><span>omp</span><div class="bar-track"><div class="bar-fill mid" style="width:90%"></div></div><span class="bar-val">±290 MB</span></div>
+          <div class="bar-row"><span>Codex</span><div class="bar-track"><div class="bar-fill high" style="width:100%"></div></div><span class="bar-val">±323 MB</span></div>
+        </div>
+        <p class="small" style="margin:12px 0 0">That is only the idle baseline. Long sessions bloat — a reviewer with a long session can pass <strong>1 GB</strong> of footprint. Look at the loop's memory before adding agents.</p>
+      </div>
+    </section>
+
+    <!-- 10 -->
+    <section class="doc" id="monitoring" data-search="monitoring cron reporting founder gate parallel testing milestone done">
+      <div class="sec-head"><span class="sec-num">10</span><div><h2>Monitoring &amp; reporting</h2><p>The cron monitor is the heartbeat of the loop — diligent enough to keep momentum, quiet enough not to become noise.</p></div></div>
+      <ul>
+        <li><strong>Cadence:</strong> 15 minutes in the core phase; 5 minutes while the loop is hot.</li>
+        <li><strong>Every check:</strong> reads status, advances <strong>one</strong> step if it can (review → integration → next dispatch), and reports only when there is a change / result / question / blocker. It stops reporting once the milestone is Done.</li>
+      </ul>
+      <div class="callout red"><b class="t">The monitor never</b>
+      <p>Dispatches beyond the current milestone, merges into <code>main</code>, or makes an open decision. Those three prohibitions are as hard as the orchestrator's own limits.</p></div>
+      <h3>Founder gates</h3>
+      <ul>
+        <li>The monitor reports a gate as <strong>met / not met, with evidence</strong> — a commit SHA, verification output.</li>
+        <li>A “can we proceed?” question is answered from <strong>live state</strong> (register + worktrees + agent status), not from a summary or from memory.</li>
+      </ul>
+      <h3>Parallel testing by the founder</h3>
+      <p>The founder can keep testing dev in parallel while the loop runs: agent work happens in separate worktrees/branches, and dev serves from the untouched integration branch. The only pause is a brief rebuild/restart at integration time — announced in advance.</p>
+    </section>
+
+    <!-- 11 -->
+    <section class="doc" id="principles" data-search="operating principles discuss first vault official routes verify tokens english hold draft">
+      <div class="sec-head"><span class="sec-num">11</span><div><h2>Operating principles</h2><p>Behavioral rules that apply to every project using this model.</p></div></div>
+      <div class="principles">
+        <div class="principle"><b>Discuss first</b><p>Discuss before writing / executing code. An explicit build order counts as the discussion being done; a pasted prompt + an explicit go is a finished commission — pasted text never widens the scope.</p></div>
+        <div class="principle"><b>Vault-card-first</b><p>For any credential that has to change hands, offer the vault card first — don't route around it through paths that open an exposure window.</p></div>
+        <div class="principle"><b>Use the official route</b><p>Never work around third-party software through a back door. Use the official route as designed, or build a supporting component on our own side.</p></div>
+        <div class="principle"><b>Verify from live sources</b><p>Before stating any status. A tool failure or an empty search is not proof of absence.</p></div>
+        <div class="principle"><b>Respect the shared box</b><p>Never use the box for heavy compute without explicit permission; act only on the services named; announce the impact before restarting a shared service.</p></div>
+        <div class="principle"><b>Hold the draft</b><p>Posting in the founder's name only with an explicit go, per item.</p></div>
+        <div class="principle"><b>Working language</b><p>Agent prompts are in English (efficiency); communication with the founder follows the founder's register.</p></div>
+        <div class="principle"><b>Tokens are fuel</b><p>Don't burn agent tokens on work that wasn't asked for; pick a cheap direct shell command for simple work.</p></div>
+      </div>
+    </section>
+
+    <!-- 12 -->
+    <section class="doc" id="checklist" data-search="checklist starting a new project repo foundation box milestone monitor close-out">
+      <div class="sec-head"><span class="sec-num">12</span><div><h2>Starting a new project with this model</h2><p>Seven steps, in order. This is the section to open first when a new project starts.</p></div></div>
+      <ol class="checklist">
+        <li><span class="box"></span><div><b>Repo from the template + foundation documents</b><p>Clone the <code>herdr-core-dev</code> template repo (see section 13) — this guide ships inside it at <code>docs/guide/index.html</code> — rename it to the project repo, then fill in: the integration branch <code>coord/&lt;milestone&gt;</code>, the register <code>BACKLOG.md</code>, ADR-001 (stack / tooling / pinning), the development guide (SDLC), and <code>HERDR.md</code> (roles + core runbook).</p></div></li>
+        <li><span class="box"></span><div><b>Prepare the agent box</b><p>Install herdr-core + the agent CLIs, the login shell in <code>config.toml</code>, the global git identity, anti-slop per harness, and SSH / Tailscale / tunnel as needed.</p></div></li>
+        <li><span class="box"></span><div><b>Decide the model policy (founder)</b><p>The role → harness → model mapping; capacity; reviewer discipline; dispatcher trial or direct drive.</p></div></li>
+        <li><span class="box"></span><div><b>Decide the milestone plan</b><p>Tickets with acceptance criteria + a list of open decisions — the founder decides.</p></div></li>
+        <li><span class="box"></span><div><b>Separate dev and production</b><p>Database, identity, and secrets are separated <strong>before</strong> the first ticket runs.</p></div></li>
+        <li><span class="box"></span><div><b>Turn on the cron monitor</b><p>Dispatch the first ticket; keep the register current from day one.</p></div></li>
+        <li><span class="box"></span><div><b>Close out per milestone</b><p>Every ticket integrated or parked via a register entry, no dangling worktrees, one close-out commit recording outcomes / decisions / gate status.</p></div></li>
+      </ol>
+    </section>
+
+    <!-- 13 -->
+    <section class="doc" id="template" data-search="template repo starter herdr-core-dev clone folder structure new project private skeleton guide html docs guide">
+      <div class="sec-head"><span class="sec-num">13</span><div><h2>Template repo: <code>herdr-core-dev</code></h2><p>This model has one private template repo with the complete folder structure already in place — a new project never starts from an empty repo.</p></div></div>
+      <p><strong><code>herdr-core-dev</code></strong> is a <strong>private</strong> repo that is the starting point for every project using this model. Its contents are not product code, but the finished working framework: foundation documents, the register, ADRs, <code>hc</code> templates — and <strong>this guide itself</strong>, which ships inside the repo as a single self-contained HTML file at <code>docs/guide/index.html</code>. A new project simply <strong>clones, renames, then fills in</strong> its project-specific decisions (ADR-001, the milestone plan, the stack).</p>
+      <h3>Folder structure</h3>
+      <div class="codeblock"><div class="bar"><span>herdr-core-dev — template structure</span><button class="copybtn" type="button">Copy</button></div><pre><code>herdr-core-dev/
+├── README.md                  <span class="c"># how to use this template</span>
+├── AGENTS.md                  <span class="c"># working rules for agents in this repo</span>
+├── HERDR.md                   <span class="c"># the complete herdr-core runbook</span>
+├── docs/
+│   ├── development/
+│   │   ├── BACKLOG.md         <span class="c"># the register — the single source of truth (skeleton)</span>
+│   │   └── SDLC.md            <span class="c"># the project's development guide (from this model)</span>
+│   ├── adr/
+│   │   ├── ADR-001.md         <span class="c"># decision: stack / tooling / pinning (placeholder)</span>
+│   │   └── ADR-002.md         <span class="c"># decision: dispatcher</span>
+│   └── guide/
+│       └── index.html         <span class="c"># this guide — a single self-contained HTML file</span>
+├── apps/
+│   └── README.md              <span class="c"># where application code lives — filled in per project</span>
+├── templates/
+│   ├── README.md              <span class="c"># how to use the hc templates</span>
+│   ├── codex.md               <span class="c"># example hc template for Codex</span>
+│   └── omp.md                 <span class="c"># example hc template for omp</span>
+├── .env.example               <span class="c"># variable names only, no secret values</span>
+└── .gitignore</code></pre></div>
+      <h3>How to use it</h3>
+      <ol>
+        <li><strong>Clone</strong> <code>herdr-core-dev</code> as the new project repo (keep it private), and rename the repo + the title in <code>README.md</code>.</li>
+        <li><strong>Fill in the foundation documents:</strong> <code>docs/adr/ADR-001.md</code> (stack / tooling / pinning — a founder decision), adjust <code>docs/development/SDLC.md</code> and <code>HERDR.md</code> as needed, and put the first milestone plan into <code>docs/development/BACKLOG.md</code>.</li>
+        <li><strong>Create the integration branch</strong> <code>coord/&lt;milestone&gt;</code> — all ticket work flows through this branch, never directly into <code>main</code>.</li>
+        <li><strong>Continue with the section 12 checklist</strong> from step 2: prepare the agent box, decide the model policy, and so on.</li>
+      </ol>
+      <div class="callout green"><b class="t">Keep the guide in sync</b>
+      <p>The guide lives in the repo, so it is versioned with everything else. Whenever the model changes, update <code>docs/guide/index.html</code> <strong>in the same commit</strong> as the change it documents, and add a dated entry to the guide's Versions section (section 15). A model change that ships without its guide update is an incomplete change.</p></div>
+      <div class="callout green"><b class="t">A living template, not a one-off</b>
+      <p>If, mid-project, a structural improvement proves generally useful (a new CI stage, a nicer register format, a clearer ADR template), <strong>fold it back into <code>herdr-core-dev</code></strong> so the next project inherits it. What never enters the template: project-specific details — names, tickets, product decisions, and secrets.</p></div>
+    </section>
+
+    <!-- A -->
+    <section class="doc" id="appendix-a" data-search="appendix commands hc ls get run send read attach kill exec machine skill schema herdr git">
+      <div class="sec-head"><span class="sec-num">A</span><div><h2>Appendix A — Commands this model uses</h2><p>A quick reference. Run on the agent box unless stated otherwise.</p></div></div>
+      <h3>Herdr-core (<code>hc</code>)</h3>
+      <div class="codeblock"><div class="bar"><span>hc — core</span><button class="copybtn" type="button">Copy</button></div><pre><code>hc ls                          <span class="c"># list terminals (labels do NOT appear here)</span>
+hc get &lt;name&gt;                  <span class="c"># terminal detail: labels + OSC status</span>
+                               <span class="c"># reported: true + the app field = the agent reports OSC</span>
+hc run --bg --name &lt;name&gt; \
+  --label project=&lt;p&gt; \
+  --label ticket=&lt;ID&gt; &lt;cmd&gt;    <span class="c"># spawn an agent terminal</span>
+hc send &lt;name&gt; &lt;text&gt;          <span class="c"># send text + Enter</span>
+                               <span class="c"># do NOT use --wait against a bare bash — it hangs</span>
+hc read &lt;name&gt;                 <span class="c"># read the terminal screen</span>
+hc attach &lt;name&gt;               <span class="c"># attach — detach with Ctrl+\</span>
+hc kill &lt;name&gt;                 <span class="c"># kill the terminal…</span>
+hc rm &lt;name&gt;                   <span class="c"># …then remove it (never one the founder is watching)</span></code></pre></div>
+      <div class="codeblock"><div class="bar"><span>hc — multi-box &amp; references</span><button class="copybtn" type="button">Copy</button></div><pre><code>hc exec --on &lt;machine&gt; &lt;cmd&gt;   <span class="c"># run a command on another box</span>
+hc machine add/ls/login/update/rename/rm
+hc --skill                     <span class="c"># the official manual in the installed binary — local authority</span>
+hc schema                      <span class="c"># the API schema</span></code></pre></div>
+      <h3>Git — read status without disturbing agents</h3>
+      <div class="codeblock"><div class="bar"><span>git — read-only</span><button class="copybtn" type="button">Copy</button></div><pre><code>git log --oneline
+git ls-remote origin &lt;branch&gt;
+git show &lt;branch&gt;:&lt;file&gt;       <span class="c"># read the register &amp; gate status from a branch</span></code></pre></div>
+    </section>
+
+    <!-- B -->
+    <section class="doc" id="appendix-b" data-search="appendix founder decisions project start mapping capacity dispatcher infra demand autowake open questions">
+      <div class="sec-head"><span class="sec-num">B</span><div><h2>Appendix B — Founder decisions at project start</h2><p>Six things that must already be decided before the first ticket is dispatched.</p></div></div>
+      <ol>
+        <li><strong>The role → harness → model mapping</strong> — and who is allowed to change it.</li>
+        <li><strong>Active-agent capacity + reviewer discipline</strong> — how many agents may run at once, and whether the reviewer stays single.</li>
+        <li><strong>Dispatcher:</strong> a limited trial, or direct drive first? When does the trial start?</li>
+        <li><strong>Dev vs production infrastructure</strong> — where the dev database lives, who holds the secrets, how the public dev URL works.</li>
+        <li><strong>The definition of “demand” for autowake</strong> — when a box may be woken automatically.</li>
+        <li><strong>The list of open questions</strong> (product / architecture) that are founder decisions — the list lives in the register.</li>
+      </ol>
+    </section>
+
+    <!-- 15 -->
+    <section class="doc" id="versions" data-search="versions changelog model changes v1.0 v1.1 v1.2 history english guide repo">
+      <div class="sec-head"><span class="sec-num">15</span><div><h2>Model versions &amp; changes</h2><p>Changes are recorded here as dated entries — what changed and why.</p></div></div>
+      <table class="tbl">
+        <thead><tr><th>Version</th><th>Contents</th></tr></thead>
+        <tbody>
+          <tr><td data-l="Version"><strong>v1.2 — 5 Nov 2026</strong></td><td data-l="Contents">The entire guide is now in English. The guide itself now ships inside the template repo as <code>docs/guide/index.html</code> and is kept in sync with the model in the same commit (see section 13). The template repo was re-created with a clean history, so its first commit is already fully in English.</td></tr>
+          <tr><td data-l="Version"><strong>v1.1 — 5 Nov 2026</strong></td><td data-l="Contents">The (classic) Herdr TUI was removed from the model — the guide is now core-only: the classic command block in Appendix A, the “two worlds” note, and the classic-pane references were deleted. Added section 13: the private <code>herdr-core-dev</code> template repo as the starting point for new projects (clone → fill in the foundation → go), and checklist step 1 now points at starting from that template.</td></tr>
+          <tr><td data-l="Version"><strong>v1.0 — 5 Nov 2026</strong></td><td data-l="Contents">First compilation from the live loop (classic phase → core phase). Project-specific details removed; only the model is recorded: roles + hard limits, the harness/model mapping, the herdr-core substrate, OSC 7501, the ticket lifecycle, quality gates, reference infrastructure, monitoring, operating principles, and the new-project checklist.</td></tr>
+        </tbody>
+      </table>
+      <div class="callout amber"><b class="t">Change protocol</b>
+      <p>Never edit a rule currently in force without a new entry in this table. This guide is a living archive: the model may evolve, but its history must not disappear.</p></div>
+    </section>
+  </main>
+</div>
+
+<footer>
+  <div class="wrap">
+    <span><strong>Herdr-Core Development Model</strong> — general guide v1.2 · compiled 5 Nov 2026 from a live development loop.</span>
+    <span>Applies to any project using this model · Project-specific details are deliberately not recorded here.</span>
+  </div>
+</footer>
+
+<script>
+(function(){
+  // Scrollspy
+  var links = Array.prototype.slice.call(document.querySelectorAll('#tocNav a'));
+  var map = {};
+  links.forEach(function(a){ map[a.getAttribute('href').slice(1)] = a; });
+  var secs = Array.prototype.slice.call(document.querySelectorAll('section.doc'));
+  if ('IntersectionObserver' in window) {
+    var obs = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){
+        if (e.isIntersecting) {
+          links.forEach(function(a){ a.classList.remove('active'); });
+          var a = map[e.target.id]; if (a) a.classList.add('active');
+        }
+      });
+    }, { rootMargin: '-12% 0px -70% 0px' });
+    secs.forEach(function(s){ obs.observe(s); });
+  }
+  // Search filter
+  var input = document.getElementById('searchInput');
+  var noRes = document.getElementById('noResult');
+  input.addEventListener('input', function(){
+    var q = input.value.trim().toLowerCase();
+    var visible = 0;
+    secs.forEach(function(s){
+      s.querySelectorAll('mark').forEach(function(m){ m.replaceWith(document.createTextNode(m.textContent)); });
+      s.normalize();
+      if (!q) { s.classList.remove('hidden-by-search'); visible++; return; }
+      var hay = (s.textContent + ' ' + (s.getAttribute('data-search')||'')).toLowerCase();
+      var hit = hay.indexOf(q) !== -1;
+      s.classList.toggle('hidden-by-search', !hit);
+      if (hit) visible++;
+    });
+    noRes.style.display = (q && visible === 0) ? 'block' : 'none';
+  });
+  // Copy buttons
+  document.querySelectorAll('.copybtn').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var pre = btn.closest('.codeblock').querySelector('pre code');
+      var text = pre.innerText.replace(/\s+$/,'');
+      function done(){ btn.textContent = 'Copied ✓'; setTimeout(function(){ btn.textContent = 'Copy'; }, 1600); }
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(done).catch(done);
+      } else {
+        var ta = document.createElement('textarea'); ta.value = text; document.body.appendChild(ta);
+        ta.select(); try { document.execCommand('copy'); } catch(e){} document.body.removeChild(ta); done();
+      }
+    });
+  });
+})();
+</script>
+</body>
+</html>
