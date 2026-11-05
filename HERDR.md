@@ -29,7 +29,7 @@ The dispatcher is a core-phase pattern. LIMITED trial: only after the first tick
 - One account, one quota pool (subscription via OAuth). Auth follows the harness default already set on the box — never write per-agent credentials into a brief.
 - The light model absorbs volume so the flagship quota lasts. Do not over-parallelize workers.
 - The model is verified from the agent footer; the founder acts only if a footer shows a different model.
-- Codex MUST run with `--no-daemon` (including in templates). The omp model is set at start via `--model <id>` (full ID is safer).
+- The omp model is set at start via `--model <id>` (full ID is safer).
 - A harness joins the loop only if it officially supports the assigned model. Unofficial shims are NOT a route.
 
 ## Herdr-core

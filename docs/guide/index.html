@@ -204,7 +204,7 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between}
   <div class="wrap hero-inner">
     <div class="hero-top">
       <span class="badge"><i></i> General guide · Applies to all projects</span>
-      <span class="badge dim">Model v1.4 — 5 Nov 2026</span>
+      <span class="badge dim">Model v1.5 — 5 Nov 2026</span>
     </div>
     <h1>Herdr-Core <em>Development Model</em></h1>
     <p class="lede">One multi-agent development model on top of <strong>herdr-core</strong>: who holds which role, how a ticket flows from dispatch to integration, which quality gates apply, and how the loop is monitored. Compiled from a live loop that already ran end-to-end — <strong>with no project-specific details</strong>, so a new project can simply follow this model.</p>
@@ -335,7 +335,7 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between}
     </section>
 
     <!-- 04 -->
-    <section class="doc" id="model" data-search="model harness policy codex sol terra luna quota pool footer no-daemon anti-slop shim">
+    <section class="doc" id="model" data-search="model harness policy codex sol terra luna quota pool footer anti-slop shim">
       <div class="sec-head"><span class="sec-num">04</span><div><h2>Model &amp; harness policy</h2><p>The reference role → harness → model mapping, plus the rules that go with it.</p></div></div>
       <table class="tbl">
         <thead><tr><th>Need</th><th>Harness</th><th>Model</th></tr></thead>
@@ -353,7 +353,7 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between}
         <li><strong>One account, one quota pool.</strong> All models run on a single subscription account via OAuth. Auth follows the harness defaults already set on the box — never write per-agent credentials into a brief; that way a model can never be swapped between harnesses by accident.</li>
         <li><strong>Light models absorb volume</strong> so the flagship model's quota lasts. Do not over-parallelize workers.</li>
         <li><strong>Models are verified from the footer, not by asking the founder.</strong> Harness defaults already match the locked mapping; the monitor verifies the agent's footer — the founder acts only if the footer shows a different model.</li>
-        <li><strong>Codex must run with <code>--no-daemon</code></strong> (including in templates), or the command executes outside <code>hc</code>.</li>
+        <li><strong>Codex runs bare — just <code>codex</code>, no extra flag</strong> (including in templates). Current Codex (verified 0.166.0+) resolves to an npm wrapper that executes the native binary directly in the foreground, so the command stays inside <code>hc</code> on its own; older guidance that required a daemon opt-out flag no longer applies.</li>
         <li><strong>The omp model is set at start</strong> via <code>--model &lt;id&gt;</code> — a full ID is safer; a fuzzy match can land on the wrong model. Changing model mid-flight = restart the session with the new model.</li>
       </ul>
       <div class="callout red"><b class="t">Harness selection criterion — no shims</b>
@@ -402,7 +402,7 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between}
         <thead><tr><th>Agent</th><th>Known OSC reporting status</th></tr></thead>
         <tbody>
           <tr><td data-l="Agent"><strong>omp</strong></td><td data-l="Status">Reports (version-dependent)</td></tr>
-          <tr><td data-l="Agent"><strong>Codex</strong> (typed from a shell)</td><td data-l="Status">Generally does not report — the label stays <code>bash</code>. Spawn Codex terminals via <code>hc run --bg --name &lt;name&gt; codex --no-daemon</code></td></tr>
+          <tr><td data-l="Agent"><strong>Codex</strong></td><td data-l="Status">Reports OSC 7501 (idle / done) — verified live with bare <code>codex</code> (0.166.0+). Spawn Codex terminals via <code>hc run --bg --name &lt;name&gt; codex</code></td></tr>
           <tr><td data-l="Agent"><strong>Muse Code</strong></td><td data-l="Status">Not yet verified</td></tr>
         </tbody>
       </table>
@@ -690,11 +690,12 @@ git worktree prune                      <span class="c"># clear entries whose di
     </section>
 
     <!-- 15 -->
-    <section class="doc" id="versions" data-search="versions changelog model changes v1.0 v1.1 v1.2 v1.3 v1.4 history english guide repo orchestrator harness reasoning worktree">
+    <section class="doc" id="versions" data-search="versions changelog model changes v1.0 v1.1 v1.2 v1.3 v1.4 v1.5 history english guide repo orchestrator harness reasoning worktree codex">
       <div class="sec-head"><span class="sec-num">16</span><div><h2>Model versions &amp; changes</h2><p>Changes are recorded here as dated entries — what changed and why.</p></div></div>
       <table class="tbl">
         <thead><tr><th>Version</th><th>Contents</th></tr></thead>
         <tbody>
+          <tr><td data-l="Version"><strong>v1.5 — 5 Nov 2026</strong></td><td data-l="Contents">Removed the <code>--no-daemon</code> requirement for Codex everywhere it appeared. Current Codex (verified live at 0.166.0+) runs bare — the <code>codex</code> command resolves to an npm wrapper that executes the native binary directly in the foreground, answers prompts inside <code>hc</code>, and reports OSC 7501 idle / done — so no daemon opt-out flag is needed in rules, spawn commands, or templates. Updated accordingly: the Codex rule in section 04 (now: run bare <code>codex</code>) and the Codex row in section 06's OSC table (spawn command without the flag; reporting status corrected from “generally does not report” to reports, verified).</td></tr>
           <tr><td data-l="Version"><strong>v1.4 — 5 Nov 2026</strong></td><td data-l="Contents">Added section 08, <strong>Git worktrees in practice</strong>: what a worktree is (several working directories on one shared <code>.git</code>), the one-branch-per-worktree guarantee git enforces, the on-disk layout (worktrees as siblings of the main checkout, one directory per ticket), the create / list / remove / prune commands, the worktree lifecycle across dispatch → work → review → integration → cleanup, and the rules and pitfalls (never share a directory, a refused <code>remove</code> is a signal, drift, per-worktree build state). Appendix A gained a matching <code>git worktree</code> command block. Sections after 07 were renumbered (quality gates are now 09, the template repo 14, Versions 16); historical entries below keep the section numbers in force when they were written.</td></tr>
           <tr><td data-l="Version"><strong>v1.3 — 5 Nov 2026</strong></td><td data-l="Contents">The orchestrator role is no longer tied to Muse. The role is filled by <strong>any harness running a strong reasoning model</strong> — the reference is Codex + GPT-6.1-SOL, and Muse also qualifies. The orchestrator itself may also run inside herdr-core, as one of its own terminals. Updated accordingly: the section 3 role card (title, chip, and description), a new Orchestrator row in section 4's mapping table plus an explicit harness-agnostic rule, and the hero summary.</td></tr>
           <tr><td data-l="Version"><strong>v1.2 — 5 Nov 2026</strong></td><td data-l="Contents">The entire guide is now in English. The guide itself now ships inside the template repo as <code>docs/guide/index.html</code> and is kept in sync with the model in the same commit (see section 13). The template repo was re-created with a clean history, so its first commit is already fully in English.</td></tr>
@@ -710,7 +711,7 @@ git worktree prune                      <span class="c"># clear entries whose di
 
 <footer>
   <div class="wrap">
-    <span><strong>Herdr-Core Development Model</strong> — general guide v1.4 · compiled 5 Nov 2026 from a live development loop.</span>
+    <span><strong>Herdr-Core Development Model</strong> — general guide v1.5 · compiled 5 Nov 2026 from a live development loop.</span>
     <span>Applies to any project using this model · Project-specific details are deliberately not recorded here.</span>
   </div>
 </footer>
