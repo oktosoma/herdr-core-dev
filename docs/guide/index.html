@@ -204,12 +204,12 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between}
   <div class="wrap hero-inner">
     <div class="hero-top">
       <span class="badge"><i></i> General guide · Applies to all projects</span>
-      <span class="badge dim">Model v1.5 — 5 Nov 2026</span>
+      <span class="badge dim">Model v1.6 — 5 Nov 2026</span>
     </div>
     <h1>Herdr-Core <em>Development Model</em></h1>
     <p class="lede">One multi-agent development model on top of <strong>herdr-core</strong>: who holds which role, how a ticket flows from dispatch to integration, which quality gates apply, and how the loop is monitored. Compiled from a live loop that already ran end-to-end — <strong>with no project-specific details</strong>, so a new project can simply follow this model.</p>
     <div class="hero-meta">
-      <div><b>7 roles</b><span>Founder, Orchestrator, Architect, Dispatcher, Worker, Reviewer, Platform Owner</span></div>
+      <div><b>7 roles + 1 conditional</b><span>Founder, Orchestrator, Architect, Dispatcher, Worker, Reviewer, Platform Owner — plus a Tester, dispatched only for high-risk tickets &amp; milestone close-out</span></div>
       <div><b>Harnesses</b><span>Codex for reasoning · omp for implementation &amp; review — the orchestrator role itself is harness-agnostic</span></div>
       <div><b>1 register</b><span><code>BACKLOG.md</code> — the single source of truth, written only by the Orchestrator</span></div>
       <div><b>1 ticket = 1 branch</b><span>One worktree per agent, independent review, integration by the Orchestrator</span></div>
@@ -257,7 +257,7 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between}
 
     <!-- 02 -->
     <section class="doc" id="overview" data-search="overview actors ticket flow summary substrate git cron">
-      <div class="sec-head"><span class="sec-num">02</span><div><h2>Overview</h2><p>Seven actors, one substrate, one ticket flow.</p></div></div>
+      <div class="sec-head"><span class="sec-num">02</span><div><h2>Overview</h2><p>Seven standing actors, one conditional role, one substrate, one ticket flow.</p></div></div>
       <p><strong>The substrate:</strong> herdr-core (<code>hc</code>) on a single Linux agent box. Git as the source of truth (register, ADRs, branches). A cron monitor as the heartbeat of the loop.</p>
       <h3>One ticket, in brief</h3>
       <div class="flow">
@@ -268,12 +268,13 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between}
         <div class="step"><span class="k">Step 5</span><b>Orchestrator integrates</b><p>Merge into the integration branch, re-verify, update the register.<span class="arr">→</span></p></div>
         <div class="step"><span class="k">Step 6</span><b>Next ticket</b><p>The loop continues until the milestone is done; the cron monitor keeps the heartbeat.</p></div>
       </div>
+      <p>One addition to that flow, on occasion only: for <strong>high-risk tickets</strong> (auth, billing, payment) — and again at <strong>milestone close-out</strong> — the orchestrator dispatches a conditional <strong>Tester</strong> (section 03) to run end-to-end journeys and regression hunting on the integration branch. The Tester is not a standing role; when it is not dispatched, its ground is covered by the worker's own tests, the reviewer's independent reproduction, and CI.</p>
       <div class="callout green"><b class="t">The separation principle underneath everything</b>
       <p>The one who <em>decides</em> (founder), the one who <em>runs the loop</em> (orchestrator), the one who <em>does the work</em> (worker), and the one who <em>verifies</em> (reviewer) are different parties. No agent ever both produces and approves its own work.</p></div>
     </section>
 
     <!-- 03 -->
-    <section class="doc" id="roles" data-search="roles founder orchestrator architect dispatcher worker reviewer platform owner responsibilities hard limits">
+    <section class="doc" id="roles" data-search="roles founder orchestrator architect dispatcher worker reviewer platform owner tester conditional e2e regression responsibilities hard limits">
       <div class="sec-head"><span class="sec-num">03</span><div><h2>Roles</h2><p>Responsibilities and hard limits for every role. The limits are not advice — they are part of the model.</p></div></div>
       <div class="roles">
         <article class="role wide">
@@ -329,6 +330,15 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between}
           <div class="role-head"><h3>Platform Owner</h3><span class="chip">omp · as assigned</span></div>
           <p>Owns the test harness + CI as the milestone gate, plus follow-up automation once the gate passes. One owner for harness + CI — never split.</p>
         </article>
+        <article class="role wide">
+          <div class="role-head"><h3>Tester</h3><span class="chip">omp · GPT-6.1-Terra · conditional — dispatched, not standing</span></div>
+          <p>End-to-end and regression testing — the ground the other roles do not cover: the reviewer verifies <em>one</em> ticket, CI runs the suite, but nobody owns the user journey across tickets or bug hunting on the integration branch. The Tester exists <strong>only when dispatched</strong>: by the orchestrator, for <strong>high-risk tickets</strong> (auth, billing, payment) and at <strong>milestone close-out</strong>. Its brief is <strong>test-only</strong>: it runs journeys and probes against the built app on the integration branch, and every finding is filed as a new ticket with reproduction evidence — it never fixes code itself.</p>
+          <div class="limits"><b>Hard limits</b><ul>
+            <li>Test-only — never changes product code; findings become tickets, not patches</li>
+            <li>Dispatched per occasion by the orchestrator — never standing, never self-dispatched</li>
+            <li>Never replaces the reviewer's verdict or the CI gate for a ticket</li>
+          </ul></div>
+        </article>
       </div>
       <div class="callout amber"><b class="t">A note on the dispatcher</b>
       <p>The dispatcher is a <em>core-phase</em> pattern. Its trial is <strong>limited</strong>: it starts only after the first ticket has been integrated in the core with the orchestrator driving directly via <code>hc</code>. Until the trial is proven, the orchestrator drives directly.</p></div>
@@ -343,10 +353,11 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between}
           <tr><td data-l="Need"><strong>Orchestrator</strong> (loop control, judgment calls)</td><td data-l="Harness">Any harness — the requirement is a strong reasoning model</td><td data-l="Model">Reference: <code>GPT-6.1-SOL</code></td></tr>
           <tr><td data-l="Need"><strong>Architect, dispatcher, other reasoning</strong></td><td data-l="Harness">Codex</td><td data-l="Model"><code>GPT-6.1-SOL</code></td></tr>
           <tr><td data-l="Need"><strong>Workers that need minimal hallucination; the reviewer</strong></td><td data-l="Harness">omp</td><td data-l="Model"><code>GPT-6.1-Terra</code></td></tr>
+          <tr><td data-l="Need"><strong>Tester</strong> (conditional — E2E / regression, when dispatched)</td><td data-l="Harness">omp</td><td data-l="Model"><code>GPT-6.1-Terra</code></td></tr>
           <tr><td data-l="Need"><strong>Light / fast work</strong></td><td data-l="Harness">omp</td><td data-l="Model"><code>GPT-6-Luna</code></td></tr>
         </tbody>
       </table>
-      <p class="small">The selection logic: reasoning and judgment (architecture, dispatch, review) get the strongest model or the one with the lowest hallucination rate; light-volume work is absorbed by the fast model so the flagship quota lasts. The reviewer is deliberately <em>not</em> a light model — a careless verdict is the most expensive failure in this loop.</p>
+      <p class="small">The selection logic: reasoning and judgment (architecture, dispatch, review) get the strongest model or the one with the lowest hallucination rate; light-volume work is absorbed by the fast model so the flagship quota lasts. The reviewer is deliberately <em>not</em> a light model — a careless verdict is the most expensive failure in this loop. The tester, when dispatched, runs on Terra for the same reason: an E2E finding that cannot be trusted is worse than none.</p>
       <h3>Rules that go with it</h3>
       <ul>
         <li><strong>The orchestrator role is harness-agnostic.</strong> It does not have to be Muse or any other specific harness — the requirement is a harness running a strong reasoning model (reference: Codex + GPT-6.1-SOL; Muse also qualifies). Swapping the orchestrator's harness does not change the role, its hard limits, or its register discipline. The orchestrator itself may also run <strong>inside herdr-core</strong> as one of its terminals, rather than outside the core.</li>
@@ -423,7 +434,7 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between}
         <div class="tl-item"><span class="who">Reviewer</span><b class="ph">Independent review</b>
           <p>The reviewer checks out the candidate from a <strong>separate</strong> checkout and performs an independent reproduction — re-running the verification, not trusting the worker's transcript. Verdict ACCEPT / CHANGES REQUESTED / REJECT, with reasons. For open questions, the reviewer asks for an explicit decision — it never decides quietly.</p></div>
         <div class="tl-item"><span class="who">Orchestrator</span><b class="ph">Integration</b>
-          <p>The orchestrator merges into the integration branch. If the branch has moved: merge first, re-verify lint / typecheck / build + smoke, then merge. Dev keeps serving from the integration branch while agents work — the only pause is a brief rebuild/restart at integration time, <strong>announced in advance</strong> with the SHA + what changed.</p></div>
+          <p>The orchestrator merges into the integration branch. If the branch has moved: merge first, re-verify lint / typecheck / build + smoke, then merge. Dev keeps serving from the integration branch while agents work — the only pause is a brief rebuild/restart at integration time, <strong>announced in advance</strong> with the SHA + what changed. For a <strong>high-risk ticket</strong> (auth, billing, payment), the orchestrator then dispatches the conditional Tester (section 03) for an E2E / regression pass on the integration branch; at milestone close-out the same pass runs across the whole milestone.</p></div>
         <div class="tl-item"><span class="who">Orchestrator</span><b class="ph">Register updated</b>
           <p>The register (<code>BACKLOG.md</code>) is updated — by the orchestrator only. Then the loop moves on to the next ticket.</p></div>
       </div>
@@ -503,7 +514,7 @@ git worktree prune</code></pre></div>
     </section>
 
     <!-- 09 -->
-    <section class="doc" id="gates" data-search="quality gates test harness ci platform owner lint typecheck unit build contract smoke anti-slop">
+    <section class="doc" id="gates" data-search="quality gates test harness ci platform owner lint typecheck unit build contract smoke anti-slop tester e2e regression conditional">
       <div class="sec-head"><span class="sec-num">09</span><div><h2>Quality gates</h2><p>No ticket passes because it “looks right”.</p></div></div>
       <h3>Test harness + CI = the milestone gate</h3>
       <p>Owned by <strong>one platform owner</strong>. CI stages, in order:</p>
@@ -524,6 +535,11 @@ git worktree prune</code></pre></div>
         <li>Independent review stands on its own — the reviewer reproduces; it does not read the report and nod.</li>
         <li>A criterion whose cost is staging-only code that tests itself (not the product) must be surfaced: propose a cheap check against the real thing, and hand the criterion change to the founder.</li>
         <li>Anti-slop mode <code>during</code> on every harness; the filter never replaces the project's design direction.</li>
+      </ul>
+      <h3>E2E &amp; regression — the conditional Tester</h3>
+      <ul>
+        <li>CI runs the suite and the reviewer verifies one ticket; neither owns the end-to-end user journey. For <strong>high-risk tickets</strong> (auth, billing, payment) and at <strong>milestone close-out</strong>, the orchestrator dispatches the conditional Tester (section 03) to run user journeys and regression hunting against the built app on the integration branch.</li>
+        <li>The Tester is <strong>test-only</strong>: findings come back as new tickets with reproduction evidence — it never patches code, and it never blocks integration on its own authority; the orchestrator decides what a finding means for the milestone.</li>
       </ul>
     </section>
 
@@ -690,11 +706,12 @@ git worktree prune                      <span class="c"># clear entries whose di
     </section>
 
     <!-- 15 -->
-    <section class="doc" id="versions" data-search="versions changelog model changes v1.0 v1.1 v1.2 v1.3 v1.4 v1.5 history english guide repo orchestrator harness reasoning worktree codex">
+    <section class="doc" id="versions" data-search="versions changelog model changes v1.0 v1.1 v1.2 v1.3 v1.4 v1.5 v1.6 history english guide repo orchestrator harness reasoning worktree codex tester conditional">
       <div class="sec-head"><span class="sec-num">16</span><div><h2>Model versions &amp; changes</h2><p>Changes are recorded here as dated entries — what changed and why.</p></div></div>
       <table class="tbl">
         <thead><tr><th>Version</th><th>Contents</th></tr></thead>
         <tbody>
+          <tr><td data-l="Version"><strong>v1.6 — 5 Nov 2026</strong></td><td data-l="Contents">Added one <strong>conditional role: the Tester</strong> (E2E / regression). Testing was already covered in three layers — the worker ships tests with its code, the reviewer reproduces independently, and CI is the gate — so a standing tester would only duplicate the reviewer. What had no owner was the end-to-end user journey across tickets and regression hunting on the integration branch. The Tester fills exactly that gap, and only on dispatch: by the orchestrator, for <strong>high-risk tickets</strong> (auth, billing, payment) and at <strong>milestone close-out</strong>, running on omp + GPT-6.1-Terra with a <strong>test-only</strong> brief — it never changes product code; every finding becomes a new ticket. Recorded in the section 03 role cards (hero count now “7 roles + 1 conditional”), a new Tester row in section 04's mapping table, a note in the section 07 integration step, and a new E2E &amp; regression block in section 09. Other candidate roles were considered and deliberately not added: security review is a reviewer lens for auth/billing tickets, release/integration stays with the orchestrator, docs with orchestrator + worker, and research/spikes with the architect.</td></tr>
           <tr><td data-l="Version"><strong>v1.5 — 5 Nov 2026</strong></td><td data-l="Contents">Removed the <code>--no-daemon</code> requirement for Codex everywhere it appeared. Current Codex (verified live at 0.166.0+) runs bare — the <code>codex</code> command resolves to an npm wrapper that executes the native binary directly in the foreground, answers prompts inside <code>hc</code>, and reports OSC 7501 idle / done — so no daemon opt-out flag is needed in rules, spawn commands, or templates. Updated accordingly: the Codex rule in section 04 (now: run bare <code>codex</code>) and the Codex row in section 06's OSC table (spawn command without the flag; reporting status corrected from “generally does not report” to reports, verified).</td></tr>
           <tr><td data-l="Version"><strong>v1.4 — 5 Nov 2026</strong></td><td data-l="Contents">Added section 08, <strong>Git worktrees in practice</strong>: what a worktree is (several working directories on one shared <code>.git</code>), the one-branch-per-worktree guarantee git enforces, the on-disk layout (worktrees as siblings of the main checkout, one directory per ticket), the create / list / remove / prune commands, the worktree lifecycle across dispatch → work → review → integration → cleanup, and the rules and pitfalls (never share a directory, a refused <code>remove</code> is a signal, drift, per-worktree build state). Appendix A gained a matching <code>git worktree</code> command block. Sections after 07 were renumbered (quality gates are now 09, the template repo 14, Versions 16); historical entries below keep the section numbers in force when they were written.</td></tr>
           <tr><td data-l="Version"><strong>v1.3 — 5 Nov 2026</strong></td><td data-l="Contents">The orchestrator role is no longer tied to Muse. The role is filled by <strong>any harness running a strong reasoning model</strong> — the reference is Codex + GPT-6.1-SOL, and Muse also qualifies. The orchestrator itself may also run inside herdr-core, as one of its own terminals. Updated accordingly: the section 3 role card (title, chip, and description), a new Orchestrator row in section 4's mapping table plus an explicit harness-agnostic rule, and the hero summary.</td></tr>
@@ -711,7 +728,7 @@ git worktree prune                      <span class="c"># clear entries whose di
 
 <footer>
   <div class="wrap">
-    <span><strong>Herdr-Core Development Model</strong> — general guide v1.5 · compiled 5 Nov 2026 from a live development loop.</span>
+    <span><strong>Herdr-Core Development Model</strong> — general guide v1.6 · compiled 5 Nov 2026 from a live development loop.</span>
     <span>Applies to any project using this model · Project-specific details are deliberately not recorded here.</span>
   </div>
 </footer>

@@ -8,6 +8,10 @@
 4. **Integration (orchestrator):** merges into `coord/<milestone>` (merge-first if the branch moved, re-verify, then merge). Updates the register. Dev keeps serving from the integration branch; the only pause is a brief rebuild/restart at integration, announced first.
 5. **Next:** dispatch the following ticket; the monitor advances one step per check.
 
+## Tester (conditional)
+
+Dispatched by the orchestrator only for high-risk tickets (auth, billing, payment) or milestone close-outs. Runs E2E/regression + exploratory tests against the integrated branch (`coord/<milestone>`), never against a worker's worktree. Test-only brief: never changes code — findings are reported as tickets. Does not replace worker tests, reviewer reproduction, or CI.
+
 ## Worktrees
 
 A worktree is a separate working directory for one branch, sharing the same repo — it lets agents work in parallel without stepping on each other's files.
