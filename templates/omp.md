@@ -1,5 +1,5 @@
 command: omp --model <model-id>
-description: omp worker
+description: Unrendered omp launch example; replace the approved model ID before use
 ready: quiet
 
-<Write the task brief here. Replace <model-id> with the full model ID (e.g. gpt-6.1-terra).>
+<Render the assigned task contract here. Replace every required placeholder, including the shell command's model ID. Include the role, ticket/run ID, exact base SHA, scope, acceptance criteria, and explicit report recipient.>

@@ -1,4 +1,4 @@
 command: codex
-description: Codex agent (reasoning)
+description: Codex launch example; use the approved project configuration
 
-<Write the task brief here. This template is only an example — verify with `hc --skill`.>
+<Render the assigned task contract here. Include the role, ticket/run ID, exact base SHA, scope, acceptance criteria, and explicit report recipient. Verify the configured model and readiness behavior before dispatch.>

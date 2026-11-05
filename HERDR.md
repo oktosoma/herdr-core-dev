@@ -1,61 +1,53 @@
-# HERDR.md
+# Herdr-Core runbook
 
-Runbook for the Herdr-Core Development Model for this project. Full guide: `docs/guide/index.html` in this repo (also published as the "Herdr-Core Development Model" artifact).
+Model v2.0. This file owns role permissions and runtime operation. `AGENTS.md` is the entry point, `docs/development/SDLC.md` owns workflow transitions, and accepted ADRs record project decisions. The guide is explanatory; it does not silently override these sources.
 
-## Roles
+## Roles and authority
 
-| Role | Harness + model (reference) | Responsibility | Hard boundary |
-|---|---|---|---|
-| Founder | — | Decides open decisions; tests dev; holds credentials (vault) | — |
-| Orchestrator | Any harness with a strong reasoning model (e.g. Codex + GPT-6.1-SOL, or Muse) | Sole register writer; dispatch; integration; reporting + recovery | Never delegates register writing; never decides open decisions; never merges to `main`; never dispatches beyond the running milestone |
-| Architect | Codex, GPT-6.1-SOL | Answers architecture questions (ADV); recommendations as ADRs | Never holds `/goal`; never writes the register; never changes code |
-| Dispatcher | Codex, GPT-6.1-SOL, one pane in core | Holds `/goal` per ticket (acceptance + hard stop clause); dispatch + collect only | No architecture decisions; no register writes; no writable worktree (reads only the integration branch / `main`); everything escalates to the orchestrator; kill-switch: the orchestrator takes over direct driving |
-| Worker | omp, GPT-6.1-Terra (low hallucination) or GPT-6-Luna (light/fast) | Implements one ticket in its own worktree + branch; code + tests; reports DONE with a candidate commit + evidence | One ticket per agent; never writes the register; never touches the dev/prod database |
-| Reviewer | omp, GPT-6.1-Terra (single) | Reviews from a separate checkout; independent reproduction is required; verdict ACCEPT / CHANGES REQUESTED / REJECT + reasons | One reviewer at a time; never decides open questions — asks for an explicit decision |
-| Tester (conditional) | omp, GPT-6.1-Terra | E2E/regression + exploratory testing across the integrated branch; test-only brief | Dispatched only for high-risk tickets (auth, billing, payment) or milestone close-outs; never changes code — findings become tickets; does not replace worker tests, reviewer reproduction, or CI |
-| Platform owner | omp (as assigned) | Owns the test harness + CI as the milestone gate | One owner for harness + CI |
+A role is an assignment, not a model name or a continuously running process. One person or harness may fill different roles at different times, but the producer and approving reviewer for a change must be different agents. Record assignments in the brief and register.
 
-The orchestrator itself may run inside herdr-core as an agent terminal, or outside it — the role is defined by capability, not by location.
-
-The dispatcher is a core-phase pattern. LIMITED trial: only after the first ticket has been integrated in core with the orchestrator driving directly via `hc`. Until the trial is proven, the orchestrator drives directly.
-
-## Model policy (reference)
-
-| Need | Harness | Model |
+| Role | Allowed actions | Boundaries |
 |---|---|---|
-| Architect, dispatcher, other reasoning | Codex | GPT-6.1-SOL |
-| Low-hallucination worker; reviewer | omp | GPT-6.1-Terra |
-| E2E / regression testing (conditional) | omp | GPT-6.1-Terra |
-| Light / fast work | omp | GPT-6-Luna |
+| Founder | Approves product, architecture, scope, budget, risk acceptance, and release authority | Records decisions through the orchestrator; delegates categories explicitly |
+| Orchestrator | Dispatches within the approved milestone; writes the register; serializes integration; coordinates recovery | Does not approve its own implementation, change open decisions, or merge to main/release without explicit authorization |
+| Architect | Researches and proposes ADRs on `docs/<area>` | Does not implement product changes, write the register, or hold dispatcher goals |
+| Dispatcher (optional) | Starts and collects assigned work under the orchestrator's lock/protocol | No register writes, writable checkout, architecture decisions, or independent milestone advancement |
+| Worker | Implements one brief, tests it, and reports a candidate SHA | Own isolated directory; no register writes, shared dev changes, dev/prod DB access, or self-approval |
+| Reviewer | Reads and verifies the exact candidate independently; issues ACCEPT / CHANGES REQUESTED / REJECT | Separate clean checkout; no product patches or unapproved decision changes |
+| Tester (conditional) | Exercises the integrated candidate in an isolated test deployment; reports reproducible findings | No product patches; no destructive journeys against shared dev; no independent release authority |
+| Platform owner | Maintains the harness and CI through reviewed tickets | One accountable owner; its implementation still receives independent review |
+| Release operator | Promotes the approved revision when explicitly authorized by the founder | Uses the approved release/migration plan and stops on failed gates |
 
-- One account, one quota pool (subscription via OAuth). Auth follows the harness default already set on the box — never write per-agent credentials into a brief.
-- The light model absorbs volume so the flagship quota lasts. Do not over-parallelize workers.
-- The model is verified from the agent footer; the founder acts only if a footer shows a different model.
-- The omp model is set at start via `--model <id>` (full ID is safer).
-- A harness joins the loop only if it officially supports the assigned model. Unofficial shims are NOT a route.
+The release operator is an authorization assigned for a release, not an additional standing agent. A reviewer remains independent even when the worker and reviewer use the same approved model. The orchestrator alone records outcomes in `BACKLOG.md`; other agents submit reports.
 
-## Herdr-core
+## Project runtime profile
 
-- One `hc` binary = CLI + background core. Holder processes own the PTYs — a core crash/restart/update does NOT kill programs. The app is only a client.
-- Programs do NOT survive a reboot — terminals come back as fresh shells, not reruns. Budget for re-launch + re-briefing after every restart.
-- There is no space command. Grouping = a name prefix per project + labels (`project=<p>`, `ticket=<ID>` on every working terminal). A label is a filter (visible via `hc get`), never shown in `hc ls` output.
-- One terminal per agent: `hc run --bg --name <stable-name> --label ...`. Report back via `hc send $HC_TERMINAL_ID`. An `hc wait` check-in is NOT completion — loop on `hc wait` / `hc get`.
-- `hc attach` = 1 terminal per invocation, with no built-in split. Detach with `Ctrl+\`. Never stop the core service, and never kill a terminal behind a pane the founder is watching.
-- Templates: line-based frontmatter (command/description/ready/submit/stop/paste_gap_ms); the command runs via `sh`; templates live in `~/.config/herdr-core/templates`.
-- The default shell is `$SHELL` or `/bin/sh` (dash on Debian — it reads neither `~/.bashrc` nor `~/.profile`). Set an explicit login shell in `~/.config/herdr-core/config.toml` (`shell = ["bash", "--login"]`) or use absolute paths / `bash -lc`.
-- Multi-box: `hc machine add/ls/login/update/rename/rm`; machine names are LOCAL per laptop; remote login stdout must stay clean.
-- Security: NO sandbox. Core runs with your account's access; socket 0700; state holds terminal output unencrypted. Do not forward the raw API/socket; do not run core as root; telemetry is ON by default in releases (`"telemetry": false` to disable).
+`project.json` maps approved decisions to operational values; see `project.example.json`. It records tool versions and official sources, role mappings, worker capacity, required checks, and accepted decision paths. Credentials are supplied separately through the platform or a vault.
 
-## Monitoring
+- Choose tools/models by required capability and official support. Record tested versions and dates; a successful version check does not establish OSC, model access, or authentication.
+- Reference mapping: Codex for reasoning; omp for implementation/review; another supported harness may orchestrate. These are examples, not mandatory model defaults.
+- Start with one worker and one reviewer. Increase capacity only within the approved profile and measured CPU, memory, disk, and quota limits. Pause new dispatch when the reviewer queue or resource budget is full.
+- Do not silently substitute a model, shim an unsupported route, or initiate a new account login when existing injected authentication may be available.
+- The dispatcher stays disabled until one ticket completes under direct orchestration. ADR-002 defines a bounded trial and its acceptance/rollback conditions.
 
-- Cron every 15 minutes (core phase; 5 minutes while the loop is hot): each check reads status, advances ONE step if possible (review → integration → next dispatch), and reports only on change / result / question / blocker.
-- The monitor never dispatches beyond the running milestone, merges to `main`, or decides open decisions.
-- Founder gates are reported as met / unmet with evidence (commit SHAs, verification output).
+## hc operation
 
-## Setting up a new box
+Validate these behaviors against the installed version's `hc --skill` and `hc schema` before automation. No hc compatibility claim is established by this template's own unit tests.
 
-1. Install herdr-core + agent CLIs (Codex, omp).
-2. Login shell in `~/.config/herdr-core/config.toml`: `shell = ["bash", "--login"]`.
-3. Global git identity (`user.name`, `user.email`).
-4. Anti-slop per harness (Codex/omp/Claude plugins; global OpenCode skill; `~/.config/muse/skills/` for Muse Code).
-5. SSH / Tailscale / tunnels as needed; secrets only in 600 env files / the vault.
+- Use one terminal per active agent, a stable project/run name, and `project` / `ticket` labels. Record the terminal ID in the dispatch evidence.
+- Report to an explicitly recorded orchestrator terminal ID; do not assume that the current terminal's `HC_TERMINAL_ID` identifies its parent or recipient. Confirm delivery with a harmless startup message.
+- `hc wait` is a check-in. Require the candidate/report artifact and exit/check outcome before advancing a ticket. OSC status is observability, not review acceptance or authorization.
+- Templates use line-based frontmatter and commands run through `sh`. Render placeholders first. Check shell/PATH in the actual launch context; use the supported login-shell setting or an absolute executable when needed.
+- Foreground execution and OSC readiness vary by harness/version. Verify both. `ready: quiet` is a timing fallback, not evidence of agent readiness.
+- Holder processes can survive a core restart; processes do not survive host shutdown. Reconcile existing terminals before relaunching after an interruption. Follow the recovery procedure rather than blindly replaying dispatch.
+- Do not stop a shared core or kill a terminal the founder is using. Announce the impact of an authorized shared-service restart.
+
+## Security and operations
+
+hc is not an access sandbox. Its local API and terminal state have the account's trust boundary, and terminal logs may contain sensitive output. Worktrees share Git metadata and do not prevent cross-directory writes. Use scoped credentials, protected remote branches, separate test resources, and stronger process isolation where required.
+
+Do not expose the raw core socket/API or run it as root. Configure telemetry using the installed tool's documented syntax and the approved project policy. Define log retention and redaction. Never store real values in `project.json`, examples, briefs, or the register.
+
+The monitor is an entry point to the same serialized orchestrator, not a second writer. Its cadence is a profile decision; 15 minutes idle / 5 minutes active is an example. See [operations](docs/development/OPERATIONS.md) for locks, run IDs, checkpoints, and restart handling.
+
+Follow [setup](docs/development/SETUP.md) for a fresh machine and [SDLC](docs/development/SDLC.md) before integrating or releasing.

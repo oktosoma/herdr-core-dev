@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "project_name": "<project-name>",
+  "template_version": "2.0.0",
+  "integration_branch": "coord/<milestone>",
+  "max_workers": 1,
+  "reviewer_count": 1,
+  "roles": {
+    "orchestrator": "<approved-harness-and-model>",
+    "worker": "<approved-harness-and-model>",
+    "reviewer": "<approved-harness-and-model>"
+  },
+  "tools": {
+    "hc": {"version": "<exact-version>", "source": "<official-https-source>"},
+    "codex": {"version": "<exact-version>", "source": "https://github.com/openai/codex"},
+    "omp": {"version": "<exact-version>", "source": "<official-https-source>"}
+  },
+  "decisions": {
+    "stack": "docs/adr/ADR-001.md",
+    "roles": "<accepted-role-decision-path>",
+    "release": "<accepted-release-decision-path>"
+  },
+  "checks": [
+    {"name": "unit", "status": "required", "command": "<native-command>", "reason": ""},
+    {"name": "integration", "status": "required", "command": "<native-command>", "reason": ""},
+    {"name": "contract", "status": "required", "command": "<native-command>", "reason": ""},
+    {"name": "static", "status": "required", "command": "<native-command>", "reason": ""},
+    {"name": "build", "status": "required", "command": "<native-command>", "reason": ""},
+    {"name": "smoke", "status": "required", "command": "<native-command>", "reason": ""}
+  ]
+}
