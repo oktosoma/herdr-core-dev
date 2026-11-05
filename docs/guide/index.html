@@ -204,13 +204,13 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between}
   <div class="wrap hero-inner">
     <div class="hero-top">
       <span class="badge"><i></i> General guide · Applies to all projects</span>
-      <span class="badge dim">Model v1.2 — 5 Nov 2026</span>
+      <span class="badge dim">Model v1.3 — 5 Nov 2026</span>
     </div>
     <h1>Herdr-Core <em>Development Model</em></h1>
     <p class="lede">One multi-agent development model on top of <strong>herdr-core</strong>: who holds which role, how a ticket flows from dispatch to integration, which quality gates apply, and how the loop is monitored. Compiled from a live loop that already ran end-to-end — <strong>with no project-specific details</strong>, so a new project can simply follow this model.</p>
     <div class="hero-meta">
       <div><b>7 roles</b><span>Founder, Orchestrator, Architect, Dispatcher, Worker, Reviewer, Platform Owner</span></div>
-      <div><b>2 harnesses</b><span>Codex for reasoning · omp for implementation &amp; review</span></div>
+      <div><b>Harnesses</b><span>Codex for reasoning · omp for implementation &amp; review — the orchestrator role itself is harness-agnostic</span></div>
       <div><b>1 register</b><span><code>BACKLOG.md</code> — the single source of truth, written only by the Orchestrator</span></div>
       <div><b>1 ticket = 1 branch</b><span>One worktree per agent, independent review, integration by the Orchestrator</span></div>
     </div>
@@ -280,8 +280,8 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between}
           <p>Decides everything that is open (architecture, product, billing, identity, infrastructure), tests dev, holds credentials via the vault, and approves dispatch across milestones. The only party allowed to make an open decision.</p>
         </article>
         <article class="role wide">
-          <div class="role-head"><h3>Orchestrator — Muse</h3><span class="chip neutral">The founder's personal agent</span></div>
-          <p>Runs the loop: dispatches, integrates, reports, and recovers. The single merger into the integration branch.</p>
+          <div class="role-head"><h3>Orchestrator</h3><span class="chip neutral">Any harness with a strong reasoning model</span></div>
+          <p>Runs the loop: dispatches, integrates, reports, and recovers. The single merger into the integration branch. The role is <strong>not tied to any one harness</strong> — what qualifies a harness for it is a strong reasoning model behind it (reference: Codex with GPT-6.1-SOL; Muse also qualifies). Pick whichever qualifying harness is available; the role's limits stay the same. The orchestrator can also <strong>run inside herdr-core itself</strong>, as one of its own terminals — it does not have to sit outside the core.</p>
           <div class="limits"><b>Hard limits</b><ul>
             <li>The only writer of the register — never delegates register writing</li>
             <li>Never makes an open decision</li>
@@ -339,6 +339,7 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between}
       <table class="tbl">
         <thead><tr><th>Need</th><th>Harness</th><th>Model</th></tr></thead>
         <tbody>
+          <tr><td data-l="Need"><strong>Orchestrator</strong> (loop control, judgment calls)</td><td data-l="Harness">Any harness — the requirement is a strong reasoning model</td><td data-l="Model">Reference: <code>GPT-6.1-SOL</code></td></tr>
           <tr><td data-l="Need"><strong>Architect, dispatcher, other reasoning</strong></td><td data-l="Harness">Codex</td><td data-l="Model"><code>GPT-6.1-SOL</code></td></tr>
           <tr><td data-l="Need"><strong>Workers that need minimal hallucination; the reviewer</strong></td><td data-l="Harness">omp</td><td data-l="Model"><code>GPT-6.1-Terra</code></td></tr>
           <tr><td data-l="Need"><strong>Light / fast work</strong></td><td data-l="Harness">omp</td><td data-l="Model"><code>GPT-6-Luna</code></td></tr>
@@ -347,6 +348,7 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between}
       <p class="small">The selection logic: reasoning and judgment (architecture, dispatch, review) get the strongest model or the one with the lowest hallucination rate; light-volume work is absorbed by the fast model so the flagship quota lasts. The reviewer is deliberately <em>not</em> a light model — a careless verdict is the most expensive failure in this loop.</p>
       <h3>Rules that go with it</h3>
       <ul>
+        <li><strong>The orchestrator role is harness-agnostic.</strong> It does not have to be Muse or any other specific harness — the requirement is a harness running a strong reasoning model (reference: Codex + GPT-6.1-SOL; Muse also qualifies). Swapping the orchestrator's harness does not change the role, its hard limits, or its register discipline. The orchestrator itself may also run <strong>inside herdr-core</strong> as one of its terminals, rather than outside the core.</li>
         <li><strong>One account, one quota pool.</strong> All models run on a single subscription account via OAuth. Auth follows the harness defaults already set on the box — never write per-agent credentials into a brief; that way a model can never be swapped between harnesses by accident.</li>
         <li><strong>Light models absorb volume</strong> so the flagship model's quota lasts. Do not over-parallelize workers.</li>
         <li><strong>Models are verified from the footer, not by asking the founder.</strong> Harness defaults already match the locked mapping; the monitor verifies the agent's footer — the founder acts only if the footer shows a different model.</li>
@@ -621,11 +623,12 @@ git show &lt;branch&gt;:&lt;file&gt;       <span class="c"># read the register &
     </section>
 
     <!-- 15 -->
-    <section class="doc" id="versions" data-search="versions changelog model changes v1.0 v1.1 v1.2 history english guide repo">
+    <section class="doc" id="versions" data-search="versions changelog model changes v1.0 v1.1 v1.2 v1.3 history english guide repo orchestrator harness reasoning">
       <div class="sec-head"><span class="sec-num">15</span><div><h2>Model versions &amp; changes</h2><p>Changes are recorded here as dated entries — what changed and why.</p></div></div>
       <table class="tbl">
         <thead><tr><th>Version</th><th>Contents</th></tr></thead>
         <tbody>
+          <tr><td data-l="Version"><strong>v1.3 — 5 Nov 2026</strong></td><td data-l="Contents">The orchestrator role is no longer tied to Muse. The role is filled by <strong>any harness running a strong reasoning model</strong> — the reference is Codex + GPT-6.1-SOL, and Muse also qualifies. The orchestrator itself may also run inside herdr-core, as one of its own terminals. Updated accordingly: the section 3 role card (title, chip, and description), a new Orchestrator row in section 4's mapping table plus an explicit harness-agnostic rule, and the hero summary.</td></tr>
           <tr><td data-l="Version"><strong>v1.2 — 5 Nov 2026</strong></td><td data-l="Contents">The entire guide is now in English. The guide itself now ships inside the template repo as <code>docs/guide/index.html</code> and is kept in sync with the model in the same commit (see section 13). The template repo was re-created with a clean history, so its first commit is already fully in English.</td></tr>
           <tr><td data-l="Version"><strong>v1.1 — 5 Nov 2026</strong></td><td data-l="Contents">The (classic) Herdr TUI was removed from the model — the guide is now core-only: the classic command block in Appendix A, the “two worlds” note, and the classic-pane references were deleted. Added section 13: the private <code>herdr-core-dev</code> template repo as the starting point for new projects (clone → fill in the foundation → go), and checklist step 1 now points at starting from that template.</td></tr>
           <tr><td data-l="Version"><strong>v1.0 — 5 Nov 2026</strong></td><td data-l="Contents">First compilation from the live loop (classic phase → core phase). Project-specific details removed; only the model is recorded: roles + hard limits, the harness/model mapping, the herdr-core substrate, OSC 7501, the ticket lifecycle, quality gates, reference infrastructure, monitoring, operating principles, and the new-project checklist.</td></tr>
@@ -639,7 +642,7 @@ git show &lt;branch&gt;:&lt;file&gt;       <span class="c"># read the register &
 
 <footer>
   <div class="wrap">
-    <span><strong>Herdr-Core Development Model</strong> — general guide v1.2 · compiled 5 Nov 2026 from a live development loop.</span>
+    <span><strong>Herdr-Core Development Model</strong> — general guide v1.3 · compiled 5 Nov 2026 from a live development loop.</span>
     <span>Applies to any project using this model · Project-specific details are deliberately not recorded here.</span>
   </div>
 </footer>

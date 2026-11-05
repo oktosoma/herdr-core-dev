@@ -7,12 +7,14 @@ Runbook for the Herdr-Core Development Model for this project. Full guide: `docs
 | Role | Harness + model (reference) | Responsibility | Hard boundary |
 |---|---|---|---|
 | Founder | — | Decides open decisions; tests dev; holds credentials (vault) | — |
-| Orchestrator (Muse) | — | Sole register writer; dispatch; integration; reporting + recovery | Never delegates register writing; never decides open decisions; never merges to `main`; never dispatches beyond the running milestone |
+| Orchestrator | Any harness with a strong reasoning model (e.g. Codex + GPT-6.1-SOL, or Muse) | Sole register writer; dispatch; integration; reporting + recovery | Never delegates register writing; never decides open decisions; never merges to `main`; never dispatches beyond the running milestone |
 | Architect | Codex, GPT-6.1-SOL | Answers architecture questions (ADV); recommendations as ADRs | Never holds `/goal`; never writes the register; never changes code |
 | Dispatcher | Codex, GPT-6.1-SOL, one pane in core | Holds `/goal` per ticket (acceptance + hard stop clause); dispatch + collect only | No architecture decisions; no register writes; no writable worktree (reads only the integration branch / `main`); everything escalates to the orchestrator; kill-switch: the orchestrator takes over direct driving |
 | Worker | omp, GPT-6.1-Terra (low hallucination) or GPT-6-Luna (light/fast) | Implements one ticket in its own worktree + branch; code + tests; reports DONE with a candidate commit + evidence | One ticket per agent; never writes the register; never touches the dev/prod database |
 | Reviewer | omp, GPT-6.1-Terra (single) | Reviews from a separate checkout; independent reproduction is required; verdict ACCEPT / CHANGES REQUESTED / REJECT + reasons | One reviewer at a time; never decides open questions — asks for an explicit decision |
 | Platform owner | omp (as assigned) | Owns the test harness + CI as the milestone gate | One owner for harness + CI |
+
+The orchestrator itself may run inside herdr-core as an agent terminal, or outside it — the role is defined by capability, not by location.
 
 The dispatcher is a core-phase pattern. LIMITED trial: only after the first ticket has been integrated in core with the orchestrator driving directly via `hc`. Until the trial is proven, the orchestrator drives directly.
 
