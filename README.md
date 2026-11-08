@@ -1,6 +1,6 @@
 # herdr-core-dev
 
-An English-language template for developing projects with the Herdr-Core Development Model. Model **v2.1**; template **2.1.0**. Version metadata lives in [template.json](template.json). Read the [guide](docs/guide/index.html) for the explanation and [HERDR.md](HERDR.md) for operational rules.
+An English-language template for developing projects with the Herdr-Core Development Model. Model **v2.2**; template **2.2.0**. Version metadata lives in [template.json](template.json). Read the [guide](docs/guide/index.html) for the explanation and [HERDR.md](HERDR.md) for operational rules.
 
 ## Start a project
 

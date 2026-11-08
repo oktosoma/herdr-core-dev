@@ -12,6 +12,8 @@ Commands run through `sh`; shell/PATH and readiness behavior are version-depende
 
 A dispatcher terminal must run on a harness that can execute `hc` itself. Verified: omp can dispatch; Codex cannot (its command daemon cannot reach the core socket). Any harness qualifies if it can run shell commands in its own terminal and reach the `hc` binary and core socket — verify with `hc ls` before assigning the role. Use absolute paths for `hc` and the agent binary when they are not on the agent shell's `PATH`. See the runbook's Harness compatibility note for the full analysis.
 
+Spawn workers fresh per task or fix round, with a self-contained brief (goal slice, acceptance criteria, relevant file paths, register entry). After any usage-limit stall, always respawn fresh — never resume the stalled session. Do not let one worker run two or more fix rounds in the same session. The reviewer is a fresh agent with no write access, given only the diff plus the criteria. The register is the blackboard. See the runbook's Worker invocation & context note for the full rule set.
+
 | Contract | Purpose |
 |---|---|
 | [Worker](tasks/worker.md) | Scope, acceptance, base, resources, and stop conditions |

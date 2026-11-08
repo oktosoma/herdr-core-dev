@@ -1,6 +1,6 @@
 # Herdr-Core runbook
 
-Model v2.1. This file owns role permissions and runtime operation. `AGENTS.md` is the entry point, `docs/development/SDLC.md` owns workflow transitions, and accepted ADRs record project decisions. The guide is explanatory; it does not silently override these sources.
+Model v2.2. This file owns role permissions and runtime operation. `AGENTS.md` is the entry point, `docs/development/SDLC.md` owns workflow transitions, and accepted ADRs record project decisions. The guide is explanatory; it does not silently override these sources.
 
 ## Roles and authority
 
@@ -50,6 +50,19 @@ A harness can fill a role only if it can do what the role requires in its own te
 - **Verified: Codex cannot dispatch.** The Codex CLI runs commands through its app-server daemon, which cannot reach the core socket (`/run/user/1000/herdr-core/default.sock`); `hc` fails with `cannot start core: Read-only file system (os error 30)`. Codex remains suitable for reasoning, architect, worker, and reviewer roles, which do not need `hc`. It cannot be the dispatcher (or an in-core orchestrator) until its command path can reach the core.
 - **The model is harness-agnostic.** The dispatcher is not tied to Codex, omp, or any other named harness. Any harness qualifies if it can (a) execute shell commands in its own terminal, (b) reach the `hc` binary, and (c) reach the core socket through its command path. A harness that runs commands through a separate daemon or sandbox that cannot see the core socket cannot dispatch, even if it can do everything else.
 - **Verify before assigning.** Before giving a harness the dispatcher role, spawn it and have it run `hc ls` (absolute path if `hc` is not on `PATH`) and report the live terminals. A correct terminal list proves it can dispatch; a read-only-filesystem or cannot-reach-core error proves it cannot. Record the harness, version, and test date in the project profile.
+
+### Worker invocation & context
+
+Long-lived agent sessions accumulate context, and every turn re-sends the full history: cost per turn grows with context, and performance degrades well before the window fills. These rules keep each agent's context small by construction. They follow the dominant documented pattern (Anthropic orchestrator-workers, Magentic-One ledgers, GSD, blackboard): a lean lead that only plans, briefs, routes, and synthesises, while each worker starts in a clean window and returns only a short summary or a durable artifact.
+
+- **Fresh worker per task.** Spawn a worker fresh for each task or fix round. It never inherits the previous worker's conversation. The brief is self-contained: the goal slice, the acceptance criteria, the relevant file paths, and the register entry to update. State travels via the register and git, not via the worker's memory.
+- **Dispatcher holds pointers, never content.** The dispatcher holds only: the goal, the acceptance criteria, the task list with status and owner, and pointers (file paths, commit SHAs, register entries). It never holds file contents, logs, or transcripts.
+- **Orchestrator holds even less.** The orchestrator holds the overall goal and which dispatcher or worker to invoke. It never does specialist work itself.
+- **Respawn after a usage-limit stall (mandatory).** After any usage-limit stall, always spawn a fresh agent; never resume the stalled session. Its context is by definition large (that is why it stalled); resuming it burns the recovered quota fast.
+- **Respawn per fix round.** Do not let one worker run two or more fix rounds in the same session. Each new round is a fresh worker plus a concise state brief (what is done, what still fails, the exact next step).
+- **Concise briefs, minimal reads.** Briefs stay short. A worker reads only what it needs: grep first to locate, read only the relevant section, never dump whole files or raw test output into the conversation.
+- **Reviewer is fresh, no write access.** The reviewer gets the diff plus the acceptance criteria only, in a fresh session, with no write access to the worker's session. It returns a verdict plus a findings list only.
+- **The register is the blackboard.** `BACKLOG.md` is the one source of truth. Typed entries; "in progress" is the only live state on it. Everything else lives in git and files. Control (who runs next) is decided by reading the register, not by agents messaging each other.
 
 ## Security and operations
 
