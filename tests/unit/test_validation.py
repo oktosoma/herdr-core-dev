@@ -1,3 +1,4 @@
+import json
 import shutil
 import subprocess
 import sys
@@ -25,8 +26,9 @@ class TemplateValidationTests(unittest.TestCase):
         self.assertEqual(validate(self.root), [])
 
     def test_stale_readme_version_fails(self):
+        model = json.loads((self.root / 'template.json').read_text())['model_version']
         path = self.root / 'README.md'
-        path.write_text(path.read_text().replace('v2.0', 'v0.0'))
+        path.write_text(path.read_text().replace(f'v{model}', 'v0.0'))
         self.assertIn('README version is stale', validate(self.root))
 
     def test_missing_local_link_fails(self):
